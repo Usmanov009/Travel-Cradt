@@ -130,31 +130,42 @@ async function getItinerary(req, res) {
   const langNote = lang === 'uz' ? "O'zbek tilida yoz" : lang === 'ru' ? 'Пиши на русском' : 'Write in English';
   const interestsList = Array.isArray(interests) && interests.length ? interests.join(', ') : 'general tourism';
 
-  const prompt = `You are a professional travel planner. Create 5 distinct ${days}-day itinerary variants for ${travelers || 2} travelers visiting ${destination}.
-Budget level: ${budget || 'mid-range'}. Hotel: ${hotelType || 'standard'}. Transport: ${transport || 'mixed'}. Interests: ${interestsList}.
+  const prompt = `You are a professional travel planner. Create 6 itinerary variants for ${travelers || 2} travelers visiting ${destination} for ${days} days.
+Budget: ${budget || 'mid-range'}. Hotel: ${hotelType || 'standard'}. Transport: ${transport || 'mixed'}.
+User interests: ${interestsList}.
 ${startDate ? `Trip starts: ${startDate}.` : ''}
-${selectedTheme ? `Focus specifically on theme: "${selectedTheme}".` : ''}
+${selectedTheme ? `Focus on theme: "${selectedTheme}".` : ''}
 
 ${langNote}.
+
+IMPORTANT RULES ABOUT VARIANTS:
+- ALL 6 variants must be built around the user's stated interests: "${interestsList}"
+- Do NOT invent unrelated themes (no "Adventure" if user chose "Food & History")
+- Variants must share the same interest focus but differ ONLY in:
+  1. Which specific places/sites are visited (different spots each variant)
+  2. Time schedule (different start times, different order of places)
+  3. Which restaurants and dishes are chosen
+  4. Pacing (some slower/relaxed, some packed/energetic)
+- Think of it as 6 different routes through the same city for the same type of traveler
 
 Return ONLY valid JSON, no markdown, no extra text:
 {
   "variants": [
     {
       "id": 1,
-      "theme": "Cultural Explorer",
+      "theme": "short label describing this specific route (max 4 words)",
       "emoji": "🏛️",
-      "description": "1 sentence describing what makes this variant unique",
+      "description": "1 sentence: what specific places make this route unique",
       "title": "trip title max 8 words",
       "days": [
         {
           "day": 1,
-          "title": "day theme title",
+          "title": "day title",
           "items": [
-            { "time": "09:00", "type": "visit", "place": "place name", "note": "1 sentence description" },
-            { "time": "12:30", "type": "food", "place": "restaurant name", "dish": "recommended dish name" },
-            { "time": "14:00", "type": "visit", "place": "place name", "note": "1 sentence description" },
-            { "time": "19:00", "type": "food", "place": "restaurant or cafe name", "dish": "recommended dish" }
+            { "time": "09:00", "type": "visit", "place": "specific place name", "note": "1 sentence" },
+            { "time": "12:30", "type": "food", "place": "restaurant name", "dish": "dish name" },
+            { "time": "14:00", "type": "visit", "place": "specific place name", "note": "1 sentence" },
+            { "time": "19:00", "type": "food", "place": "restaurant name", "dish": "dish name" }
           ]
         }
       ]
@@ -163,13 +174,13 @@ Return ONLY valid JSON, no markdown, no extra text:
 }
 
 Rules:
-- Generate EXACTLY 5 variant objects, each with a distinctly different theme/focus (e.g. Cultural, Gastro, Adventure, Relaxation, Photography)
+- Generate EXACTLY 6 variant objects
+- All variants must reflect interests: ${interestsList}
 - Each day must have 4-5 items alternating visits and meals
 - type must be one of: "visit", "food", "hotel", "transport"
-- Include realistic local restaurants and actual dishes
-- Times must be realistic (morning start ~09:00, last item ~20:00)
+- Times must be realistic (morning start ~08:00–10:00, last item ~19:00–21:00)
 - Each variant must have exactly ${days} day objects
-- Variants must be meaningfully different from each other`;
+- Use real, specific place names and local restaurants with actual dishes`;
 
   try {
     const completion = await client.chat.completions.create({

@@ -1619,7 +1619,7 @@ export function CustomPackagePage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
-              <Sparkles className="w-4 h-4" /> AI 5 ta Variant Tayyorladi
+              <Sparkles className="w-4 h-4" /> AI 6 ta Variant Tayyorladi
             </div>
             <h1 className="text-2xl md:text-3xl font-bold">O'zingizga yoqqan variantni tanlang</h1>
             <p className="text-slate-500 mt-1">{destinationLabel} · {formData.days} kun · {formData.travelers} kishi</p>
