@@ -1,0 +1,70 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(npm ls *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(dir \"c:\\\\Users\\\\Ika85\\\\Desktop\\\\TravelCraft AI\")",
+      "Bash(node -e \"require\\('./src/controllers/admin/authController'\\); require\\('./src/middleware/adminAuth'\\); require\\('./src/controllers/admin/dashboardController'\\); require\\('./src/routes/admin/auth'\\); require\\('./src/routes/admin/dashboard'\\); console.log\\('All modules load OK'\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(Get-ChildItem -Path src -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(xargs grep -l \"openai\\\\|anthropic\\\\|chat\\\\|message\")",
+      "Bash(xargs cat)",
+      "Bash(git rm *)",
+      "Bash(git commit *)",
+      "Bash(curl -s https://travelcraft-ai.onrender.com/api/health)",
+      "Bash(curl -v -m 15 https://travelcraft-ai.onrender.com/api/health)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Ika85\\\\Desktop\\\\TravelCraft AI\" -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(node server/index.js)",
+      "Bash(dir src/routes)",
+      "Bash(curl -s -X POST http://localhost:8080/api/ai/chat -H \"Content-Type: application/json\" -d \"{\\\\\"messages\\\\\":[{\\\\\"role\\\\\":\\\\\"user\\\\\",\\\\\"content\\\\\":\\\\\"hello\\\\\"}],\\\\\"lang\\\\\":\\\\\"en\\\\\"}\")",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(npm list *)",
+      "Bash(npx vite *)",
+      "Bash(curl -s -X POST http://localhost:8080/api/ai/chat -H \"Content-Type: application/json\" -d \"{\\\\\"messages\\\\\":[{\\\\\"role\\\\\":\\\\\"user\\\\\",\\\\\"content\\\\\":\\\\\"Tell me about Tashkent\\\\\"}],\\\\\"lang\\\\\":\\\\\"en\\\\\"}\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8080)",
+      "Bash(findstr LISTENING)",
+      "Bash(taskkill /PID 20644 /F)",
+      "PowerShell(Stop-Process -Id 20644 -Force -ErrorAction SilentlyContinue)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(curl -s -X POST http://localhost:8080/api/ai/chat -H \"Content-Type: application/json\" -d '{\\\\\"messages\\\\\":[{\\\\\"role\\\\\":\\\\\"user\\\\\",\\\\\"content\\\\\":\\\\\"Tell me about Tashkent in 2 sentences\\\\\"}],\\\\\"lang\\\\\":\\\\\"en\\\\\"}')",
+      "Bash(cat server/.gitignore)",
+      "Bash(cat .gitignore)",
+      "Bash(git reset *)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\Ika85\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--Users-Ika85-Desktop-TravelCraft-AI\\\\\\\\c68c85db-c3ff-4907-8f47-b0b6026494cc\\\\\\\\tasks\\\\\\\\bdyj0bezo.output\")",
+      "PowerShell(Get-Process -Id \\(Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue\\).OwningProcess -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne 0 } | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep 2; Write-Host \"OK\")",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\Ika85\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--Users-Ika85-Desktop-TravelCraft-AI\\\\\\\\c68c85db-c3ff-4907-8f47-b0b6026494cc\\\\\\\\tasks\\\\\\\\bfgpyh82r.output\")",
+      "Bash(git config *)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\Ika85\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\c--Users-Ika85-Desktop-TravelCraft-AI\\\\\\\\c68c85db-c3ff-4907-8f47-b0b6026494cc\\\\\\\\tasks\\\\\\\\b52f91x4q.output\")",
+      "Bash(npx tsc *)",
+      "Bash(node_modules/.bin/tsc --noEmit)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git -C \"c:/Users/Ika85/Desktop/TravelCraft AI Homepage Design\" add -A && git -C \"c:/Users/Ika85/Desktop/TravelCraft AI Homepage Design\" diff --cached --quiet || git -C \"c:/Users/Ika85/Desktop/TravelCraft AI Homepage Design\" commit -m \"auto: save changes\" && git -C \"c:/Users/Ika85/Desktop/TravelCraft AI Homepage Design\" push origin main 2>/dev/null || true",
+            "statusMessage": "GitHub ga push qilinmoqda...",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

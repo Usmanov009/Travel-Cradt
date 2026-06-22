@@ -1,0 +1,50 @@
+const pool = require('../db');
+
+async function getBookings(req, res) {
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM bookings ORDER BY booked_at DESC LIMIT 500'
+    );
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+async function createBooking(req, res) {
+  try {
+    const { title, type, price, name, phone, guests, days, status } = req.body;
+    const { rows } = await pool.query(
+      `INSERT INTO bookings (title, type, price, name, phone, guests, days, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING *`,
+      [title, type, price, name, phone, guests || 1, days || 1, status || 'pending']
+    );
+    return res.status(201).json(rows[0]);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+}
+
+async function updateBooking(req, res) {
+  try {
+    const id = req.params.id;
+    const { status, name, phone, guests, days } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE bookings
+       SET status = COALESCE($1, status),
+           name   = COALESCE($2, name),
+           phone  = COALESCE($3, phone),
+           guests = COALESCE($4, guests),
+           days   = COALESCE($5, days)
+       WHERE id = $6
+       RETURNING *`,
+      [status, name, phone, guests, days, id]
+    );
+    return res.json(rows[0]);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+}
+
+module.exports = { getBookings, createBooking, updateBooking };
