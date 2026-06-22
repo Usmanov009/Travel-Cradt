@@ -55,6 +55,25 @@ export function CustomPackagePage() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [planSelected, setPlanSelected] = useState(false);
   const [customBudgetAmount, setCustomBudgetAmount] = useState("");
+  const [userCity, setUserCity] = useState<string>("");
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch(
+            `/api/places/geocode?q=${encodeURIComponent(`${pos.coords.latitude},${pos.coords.longitude}`)}`
+          );
+          const data = await res.json();
+          if (data.displayName) {
+            setUserCity(data.displayName.split(",").slice(0, 2).join(", "));
+          }
+        } catch (_) {}
+      },
+      () => {}
+    );
+  }, []);
   type ItineraryItem = { time: string; type: string; place: string; note?: string; dish?: string };
   type ItineraryDay = { day: number; title: string; items: ItineraryItem[] };
   type ItineraryVariant = { id: number; theme: string; emoji: string; description: string; title: string; days: ItineraryDay[] };
@@ -695,6 +714,18 @@ export function CustomPackagePage() {
     return map[key] || <Sparkles className={cls} />;
   };
 
+  const getBlockedTransportKeys = (): string[] => {
+    if (formData.destinationType === 'international') return ['bus', 'train'];
+    if (formData.destinationType === 'domestic') return ['flight'];
+    return [];
+  };
+
+  const transportBlockReason: Record<string, string> = {
+    bus: "Xalqaro marshrut uchun mos emas",
+    train: "Bu yo'nalishda poyezd yo'q",
+    flight: "Ichki sayohatda samolyot shart emas",
+  };
+
   const planIcons: Record<string, React.ReactNode> = {
     samarkand: <Landmark className="w-5 h-5 text-amber-600" />,
     bukhara: <Landmark className="w-5 h-5 text-amber-600" />,
@@ -1215,22 +1246,81 @@ export function CustomPackagePage() {
           { key: "private-car", label: t("customPackage.transportOptions.privateCar") },
         ];
 
+        const blockedKeys = getBlockedTransportKeys();
+
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step6")}</h2>
+
+            {/* Marshrut ko'rsatish */}
+            {(userCity || destinationLabel) && (
+              <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl px-5 py-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span className="font-semibold text-slate-800 truncate">
+                    {userCity || "Joylashuv aniqlanmadi"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-slate-300 flex-shrink-0">
+                  <div className="w-2 h-px bg-slate-300" />
+                  <div className="w-2 h-px bg-slate-300" />
+                  <ArrowRight className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Navigation className="w-4 h-4 text-cyan-500 flex-shrink-0" />
+                  <span className="font-semibold text-slate-800 truncate">
+                    {destinationLabel || "Manzil tanlanmagan"}
+                  </span>
+                </div>
+                {formData.destinationType && (
+                  <span className={`ml-auto text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${
+                    formData.destinationType === 'international'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {formData.destinationType === 'international' ? 'Xalqaro' : 'Ichki'}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Bloklash sababini tushuntirish */}
+            {blockedKeys.length > 0 && (
+              <div className="flex items-start gap-2 text-sm bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+                <Lock className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <span className="text-amber-700">
+                  {formData.destinationType === 'international'
+                    ? "Xalqaro sayohat uchun avtobus va poyezd mavjud emas — faqat samolyot yoki shaxsiy transport."
+                    : "Ichki sayohatda samolyot tavsiya etilmaydi — qulay va iqtisodiy alternativlar mavjud."}
+                </span>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-3 gap-4">
               {transportOptions.map((transport) => {
                 const selected = formData.transport === transport.label;
+                const isBlocked = blockedKeys.includes(transport.key);
                 return (
                   <button
                     key={transport.key}
-                    onClick={() => setFormData({ ...formData, transport: transport.label })}
-                    className={`p-6 rounded-[1.75rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg ${
-                      selected
+                    disabled={isBlocked}
+                    onClick={() => !isBlocked && setFormData({ ...formData, transport: transport.label })}
+                    className={`p-6 rounded-[1.75rem] border transition-all shadow-sm relative ${
+                      isBlocked
+                        ? "border-slate-100 bg-slate-50 opacity-45 cursor-not-allowed grayscale"
+                        : selected
                         ? "border-transparent bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg"
-                        : "border-slate-200 text-slate-700"
+                        : "border-slate-200 text-slate-700 bg-white hover:-translate-y-0.5 hover:shadow-lg"
                     }`}
                   >
+                    {isBlocked && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] bg-slate-100/70 z-10">
+                        <Lock className="w-5 h-5 text-slate-400 mb-1" />
+                        <span className="text-xs text-slate-400 font-medium text-center px-2">
+                          {transportBlockReason[transport.key] || "Mos emas"}
+                        </span>
+                      </div>
+                    )}
                     {getTransportIcon(transport.key, selected)}
                     <h3 className="font-bold text-lg">{transport.label}</h3>
                   </button>
@@ -1703,6 +1793,20 @@ export function CustomPackagePage() {
             />
           </div>
         </div>
+
+        {userCity && (
+          <div className="flex items-center gap-2 mb-4 text-sm bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
+            <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <span className="text-slate-500">Siz hozir:</span>
+            <span className="font-semibold text-slate-800">{userCity}</span>
+            {destinationLabel && (
+              <>
+                <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                <span className="font-semibold text-blue-600">{destinationLabel}</span>
+              </>
+            )}
+          </div>
+        )}
 
         <motion.div
           key={currentStep}
