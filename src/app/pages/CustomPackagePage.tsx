@@ -42,6 +42,7 @@ import {
   Camera,
   Moon,
   Building2,
+  Lock,
 } from "lucide-react";
 
 export function CustomPackagePage() {
@@ -1117,33 +1118,66 @@ export function CustomPackagePage() {
         const budgetTier = getBudgetTier();
         const recommendedKey = budgetTier === 'budget' ? '3-star' : budgetTier === 'luxury' ? '5-star' : budgetTier === 'mid-range' ? '4-star' : null;
 
+        const availableKeys: string[] | null = budgetTier === 'budget'
+          ? ['3-star']
+          : budgetTier === 'mid-range'
+          ? ['3-star', '4-star']
+          : budgetTier === 'luxury'
+          ? ['4-star', '5-star', 'boutique']
+          : null;
+
+        const budgetLabels: Record<string, string> = {
+          budget: 'Arzon ($100–500)',
+          'mid-range': "O'rta ($500–1500)",
+          luxury: 'Hashamatli ($1500+)',
+        };
+
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step5")}</h2>
-            {budgetTier && (
+
+            {budgetTier ? (
               <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-2.5">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                Budjetingizga qarab {recommendedKey}-yulduzli mehmonxona tavsiya etiladi
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                <span>
+                  <span className="font-semibold">{budgetLabels[budgetTier]}</span> budjetiga mos mehmonxonalar faol, qolganlari bloklangan
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5">
+                <Lock className="w-4 h-4 flex-shrink-0" />
+                Budjet tanlanmagan — barcha mehmonxonalar mavjud
               </div>
             )}
+
             <div className="grid md:grid-cols-2 gap-4">
               {hotelOptions.map((hotel) => {
                 const selected = formData.hotelType === hotel.label;
-                const isRecommended = recommendedKey === hotel.key && !selected;
+                const isBlocked = availableKeys !== null && !availableKeys.includes(hotel.key);
+                const isRecommended = recommendedKey === hotel.key && !selected && !isBlocked;
                 return (
                   <button
                     key={hotel.key}
-                    onClick={() => setFormData({ ...formData, hotelType: hotel.label })}
-                    className={`p-6 rounded-[1.75rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg relative text-left ${
-                      selected
+                    disabled={isBlocked}
+                    onClick={() => !isBlocked && setFormData({ ...formData, hotelType: hotel.label })}
+                    className={`p-6 rounded-[1.75rem] border transition-all shadow-sm relative text-left ${
+                      isBlocked
+                        ? "border-slate-100 bg-slate-50 opacity-45 cursor-not-allowed grayscale"
+                        : selected
                         ? "border-transparent bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg"
                         : isRecommended
-                        ? "border-blue-400 ring-2 ring-blue-100 text-slate-700"
-                        : "border-slate-200 text-slate-700"
+                        ? "border-blue-400 ring-2 ring-blue-100 text-slate-700 hover:-translate-y-0.5 hover:shadow-lg"
+                        : "border-slate-200 text-slate-700 bg-white hover:-translate-y-0.5 hover:shadow-lg"
                     }`}
                   >
+                    {isBlocked && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[1.75rem] bg-slate-100/60 z-10">
+                        <Lock className="w-6 h-6 text-slate-400 mb-1" />
+                        <span className="text-xs text-slate-400 font-medium">Budjet mos emas</span>
+                      </div>
+                    )}
                     {isRecommended && (
-                      <span className="absolute -top-2.5 left-4 bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold shadow">
+                      <span className="absolute -top-2.5 left-4 bg-blue-600 text-white text-xs px-2.5 py-0.5 rounded-full font-semibold shadow z-10">
                         Tavsiya
                       </span>
                     )}
