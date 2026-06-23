@@ -33,6 +33,34 @@ function getWebAppUrl() {
     'https://travelcraft-ai.onrender.com';
 }
 
+async function getTelegramUser(telegramId) {
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM telegram_users WHERE telegram_id = $1',
+      [String(telegramId)]
+    );
+    return rows[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveTelegramUser(telegramId, name, phone, username, firstName) {
+  try {
+    await pool.query(
+      `INSERT INTO telegram_users (telegram_id, name, phone, username, first_name)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (telegram_id) DO UPDATE
+         SET name = EXCLUDED.name,
+             phone = EXCLUDED.phone,
+             username = EXCLUDED.username`,
+      [String(telegramId), name, phone, username || null, firstName || null]
+    );
+  } catch (err) {
+    console.error('Foydalanuvchi saqlash xatosi:', err.message);
+  }
+}
+
 async function getPackagesFromDB(type) {
   try {
     const { rows } = await pool.query(
@@ -88,6 +116,18 @@ function mainMenuKeyboard() {
   ]);
 }
 
+function phoneRequestKeyboard() {
+  return {
+    reply_markup: {
+      keyboard: [
+        [{ text: '📱 Telefon raqamni ulashish', request_contact: true }],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    },
+  };
+}
+
 function createBot() {
   const token = process.env.BOT_TOKEN;
   if (!token) {
@@ -101,12 +141,55 @@ function createBot() {
   // ─── /start ────────────────────────────────────────────
   bot.start(async (ctx) => {
     ctx.session = {};
-    const name = ctx.from.first_name || 'Mehmon';
+    const telegramId = ctx.from.id;
+    const existingUser = await getTelegramUser(telegramId);
+
+    if (existingUser) {
+      const name = existingUser.name || ctx.from.first_name || 'Mehmon';
+      await ctx.reply(
+        `✈️ *Xush kelibsiz, ${escMd(name)}\\!*\n\n` +
+        `🌍 *TravelCraft AI* — aqlli sayohat rejalashtiruvchi\n\n` +
+        `Siz nima qilmoqchisiz?`,
+        { parse_mode: 'MarkdownV2', ...mainMenuKeyboard() }
+      );
+    } else {
+      ctx.session.state = 'awaiting_phone';
+      await ctx.reply(
+        `✈️ *TravelCraft AI* ga xush kelibsiz\\!\n\n` +
+        `Davom etish uchun telefon raqamingizni ulashing:\n\n` +
+        `_Quyidagi tugmani bosing_ 👇`,
+        {
+          parse_mode: 'MarkdownV2',
+          ...phoneRequestKeyboard(),
+        }
+      );
+    }
+  });
+
+  // ─── Telefon raqam qabul qilish ────────────────────────
+  bot.on('contact', async (ctx) => {
+    const contact = ctx.message.contact;
+
+    // Faqat o'z raqamini qabul qilamiz
+    if (contact.user_id && contact.user_id !== ctx.from.id) {
+      await ctx.reply('❌ Faqat o\'z telefon raqamingizni ulashishingiz mumkin.');
+      return;
+    }
+
+    ctx.session = ctx.session || {};
+    ctx.session.phone = contact.phone_number.startsWith('+')
+      ? contact.phone_number
+      : '+' + contact.phone_number;
+    ctx.session.state = 'awaiting_name';
+
     await ctx.reply(
-      `✈️ *Xush kelibsiz, ${escMd(name)}\\!*\n\n` +
-      `🌍 *TravelCraft AI* — aqlli sayohat rejalashtiruvchi\n\n` +
-      `Siz nima qilmoqchisiz?`,
-      { parse_mode: 'MarkdownV2', ...mainMenuKeyboard() }
+      `✅ *Telefon qabul qilindi\\!*\n\n` +
+      `👤 Endi *to\'liq ismingizni* kiriting:\n` +
+      `_Masalan: Alisher Karimov_`,
+      {
+        parse_mode: 'MarkdownV2',
+        reply_markup: { remove_keyboard: true },
+      }
     );
   });
 
@@ -212,10 +295,46 @@ function createBot() {
     await showPackageDetail(ctx, type, localId);
   });
 
-  // ─── Text → AI chat ────────────────────────────────────
+  // ─── Text xabarlari ────────────────────────────────────
   bot.on('text', async (ctx) => {
     if (ctx.message.text.startsWith('/')) return;
 
+    ctx.session = ctx.session || {};
+
+    // Ro'yxatdan o'tish: ism kutilmoqda
+    if (ctx.session.state === 'awaiting_name') {
+      const name = ctx.message.text.trim();
+      if (name.length < 2) {
+        await ctx.reply('❌ Iltimos, to\'liq ismingizni kiriting \\(kamida 2 harf\\)\\.', { parse_mode: 'MarkdownV2' });
+        return;
+      }
+
+      const phone = ctx.session.phone || '';
+      await saveTelegramUser(ctx.from.id, name, phone, ctx.from.username, ctx.from.first_name);
+
+      ctx.session.state = null;
+      ctx.session.phone = null;
+
+      await ctx.reply(
+        `🎉 *Ro'yxatdan o'tdingiz\\!*\n\n` +
+        `👤 Ism: *${escMd(name)}*\n` +
+        `📱 Tel: *${escMd(phone)}*\n\n` +
+        `Endi sayohat rejalashtirish boshlang\\!`,
+        { parse_mode: 'MarkdownV2', ...mainMenuKeyboard() }
+      );
+      return;
+    }
+
+    // Ro'yxatdan o'tish: telefon kutilmoqda
+    if (ctx.session.state === 'awaiting_phone') {
+      await ctx.reply(
+        '📱 Iltimos, quyidagi tugmani bosib telefon raqamingizni ulashing:',
+        phoneRequestKeyboard()
+      );
+      return;
+    }
+
+    // AI chat
     const groq = getGroq();
     if (!groq) {
       return ctx.reply(
@@ -226,7 +345,6 @@ function createBot() {
       );
     }
 
-    ctx.session = ctx.session || {};
     if (!Array.isArray(ctx.session.messages)) ctx.session.messages = [];
 
     ctx.session.messages.push({ role: 'user', content: ctx.message.text });
@@ -324,4 +442,4 @@ async function showPackageDetail(ctx, type, localId) {
   });
 }
 
-module.exports = { createBot };
+module.exports = { createBot, getTelegramUser };

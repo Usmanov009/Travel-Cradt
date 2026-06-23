@@ -55,6 +55,22 @@ export function PackageDetailPage() {
     }
   }, [packageData, user]);
 
+  // Telegram WebApp orqali kirgan bo'lsa, ism va raqamni avtomatik to'ldirish
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg) return;
+    const telegramId = tg.initDataUnsafe?.user?.id;
+    if (!telegramId) return;
+
+    fetch(`/api/tg-user/${telegramId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.name) setName(data.name);
+        if (data.phone) setPhone(data.phone);
+      })
+      .catch(() => {});
+  }, []);
+
   const handleBooking = () => {
     if (!packageData) return;
     if (!user) { setShowLoginModal(true); return; }

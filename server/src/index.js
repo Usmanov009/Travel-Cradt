@@ -6,7 +6,8 @@ const http = require('http');
 const path = require('path');
 const pool = require('./db');
 let createBot = () => null;
-try { ({ createBot } = require('./bot')); } catch (e) { console.warn('Bot yuklanmadi:', e.message); }
+let getTelegramUser = async () => null;
+try { ({ createBot, getTelegramUser } = require('./bot')); } catch (e) { console.warn('Bot yuklanmadi:', e.message); }
 
 const { getPackages, createPackage } = require('./controllers/packagesController');
 const { getBookings, createBooking, updateBooking } = require('./controllers/bookingsController');
@@ -19,6 +20,17 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Telegram foydalanuvchi ma'lumotlarini qaytarish
+app.get('/api/tg-user/:telegram_id', async (req, res) => {
+  try {
+    const user = await getTelegramUser(req.params.telegram_id);
+    if (!user) return res.json({});
+    return res.json({ name: user.name, phone: user.phone });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 app.use('/api/auth', require('./routes/auth'));
 app.get('/api/enrich', enrichCountry);
 app.get('/api/places/geocode', geocodePlace);
@@ -104,6 +116,16 @@ async function setupDatabase() {
         password_hash VARCHAR(255) NOT NULL,
         role VARCHAR(20) DEFAULT 'user',
         blocked BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS telegram_users (
+        id SERIAL PRIMARY KEY,
+        telegram_id VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(255),
+        phone VARCHAR(50),
+        username VARCHAR(100),
+        first_name VARCHAR(100),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
