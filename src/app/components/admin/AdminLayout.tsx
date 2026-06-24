@@ -1,102 +1,90 @@
 import React, { useContext, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
-import { Menu, X } from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/admin', label: 'Dashboard', end: true },
-  { to: '/admin/packages', label: 'Packages', end: false },
+const navItems = [
+  { to: '/admin', label: 'Dashboard', icon: '📊', exact: true },
+  { to: '/admin/packages', label: 'Turlar', icon: '🌍' },
+  { to: '/admin/bookings', label: 'Bronlar', icon: '📋' },
+  { to: '/admin/users', label: 'Foydalanuvchilar', icon: '👥' },
+  { to: '/admin/companies', label: 'Tur Firmalar', icon: '🏢' },
+  { to: '/admin/revenue', label: 'Daromad', icon: '💰' },
 ];
 
 export default function AdminLayout() {
   const { user, logout } = useContext(AdminAuthContext);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
 
-  const isActive = (to: string, end?: boolean) =>
-    end ? location.pathname === to : location.pathname.startsWith(to);
-
-  const navLinkClass = (to: string, end?: boolean) =>
-    `block px-3 py-2 rounded text-sm font-medium transition ${
-      isActive(to, end)
-        ? 'bg-blue-50 text-blue-700'
-        : 'text-slate-700 hover:bg-slate-50'
-    }`;
-
-  const sidebar = (
-    <>
-      <div className="font-bold mb-6 text-lg">TravelCraft Admin</div>
-      <nav className="space-y-1">
-        {NAV_ITEMS.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={() => setSidebarOpen(false)}
-            className={navLinkClass(item.to, item.end)}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
-      <div className="mt-auto pt-6 border-t border-slate-200">
-        <div className="text-sm text-slate-500">Signed in as</div>
-        <div className="font-medium truncate">{user?.email}</div>
-        <button
-          onClick={logout}
-          className="mt-3 text-sm text-red-600 hover:text-red-700"
-        >
-          Logout
-        </button>
-      </div>
-    </>
-  );
+  const isActive = (to: string, exact?: boolean) => {
+    if (exact) return location.pathname === to;
+    return location.pathname.startsWith(to);
+  };
 
   return (
-    <div className="min-h-screen flex bg-slate-100">
-      {sidebarOpen && (
-        <button
-          type="button"
-          aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r p-4 flex flex-col transform transition-transform duration-200 md:static md:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        className={`${collapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-blue-900 to-blue-800 text-white flex flex-col transition-all duration-200`}
       >
-        <div className="flex items-center justify-between mb-4 md:hidden">
-          <span className="font-bold">Admin</span>
+        {/* Logo */}
+        <div className="flex items-center justify-between px-4 py-5 border-b border-blue-700">
+          {!collapsed && (
+            <div>
+              <div className="font-bold text-lg">TravelCraft</div>
+              <div className="text-blue-300 text-xs">Super Admin</div>
+            </div>
+          )}
           <button
-            type="button"
-            onClick={() => setSidebarOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-100"
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1 rounded hover:bg-blue-700 text-blue-200 text-xl"
           >
-            <X className="w-5 h-5" />
+            {collapsed ? '→' : '←'}
           </button>
         </div>
-        {sidebar}
+
+        {/* Nav */}
+        <nav className="flex-1 py-4 space-y-1 px-2">
+          {navItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium
+                ${isActive(item.to, item.exact)
+                  ? 'bg-white text-blue-900'
+                  : 'text-blue-100 hover:bg-blue-700'
+                }`}
+            >
+              <span className="text-lg w-6 text-center">{item.icon}</span>
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          ))}
+        </nav>
+
+        {/* User info */}
+        <div className="border-t border-blue-700 p-4">
+          {!collapsed && (
+            <div className="mb-3">
+              <div className="text-xs text-blue-300">Kirgan admin:</div>
+              <div className="text-sm font-medium truncate">{user?.email}</div>
+            </div>
+          )}
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 text-sm text-red-300 hover:text-red-100 transition-colors"
+          >
+            <span>🚪</span>
+            {!collapsed && <span>Chiqish</span>}
+          </button>
+        </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="md:hidden sticky top-0 z-30 bg-white border-b px-4 py-3 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-slate-100"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="font-semibold truncate">TravelCraft Admin</span>
-        </header>
-
-        <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
+      {/* Main content */}
+      <main className="flex-1 overflow-auto">
+        <div className="p-6">
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

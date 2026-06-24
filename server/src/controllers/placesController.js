@@ -32,8 +32,9 @@ function fetchJson(url) {
 
 function lookupKnown(query) {
   const key = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!key) return null;
   for (const [name, place] of Object.entries(KNOWN_PLACES)) {
-    if (key.includes(name) || name.includes(key.slice(0, 6))) {
+    if (key === name || key.includes(name) || (key.length >= 4 && name.startsWith(key.slice(0, 6)))) {
       return place;
     }
   }

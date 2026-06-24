@@ -48,10 +48,13 @@ app.put('/api/bookings/:id', updateBooking);
 
 // Admin routes loaded in try-catch so a missing package never blocks port binding
 try {
-  const adminAuthRoutes = require('./routes/admin/auth');
-  const adminDashboardRoutes = require('./routes/admin/dashboard');
-  app.use('/api/admin/auth', adminAuthRoutes);
-  app.use('/api/admin', adminDashboardRoutes);
+  app.use('/api/admin/auth', require('./routes/admin/auth'));
+  app.use('/api/admin', require('./routes/admin/dashboard'));
+  app.use('/api/admin/users', require('./routes/admin/users'));
+  app.use('/api/admin/packages', require('./routes/admin/packages'));
+  app.use('/api/admin/companies', require('./routes/admin/companies'));
+  app.use('/api/admin/bookings', require('./routes/admin/bookings'));
+  app.use('/api/admin/revenue', require('./routes/admin/revenue'));
   console.log('Admin routes loaded.');
 } catch (err) {
   console.error('Admin routes failed to load:', err.message);
@@ -128,7 +131,27 @@ async function setupDatabase() {
         first_name VARCHAR(100),
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS tour_companies (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        phone VARCHAR(50),
+        address TEXT,
+        website TEXT,
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'pending',
+        logo TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
     `);
+
+    // company_id ustunini packages jadvaliga qo'shish (admin Packages/Companies sahifalari uchun)
+    await client.query(`
+      ALTER TABLE packages ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES tour_companies(id) ON DELETE SET NULL;
+    `).catch(() => {});
+
     console.log('Database tables ready.');
 
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
@@ -162,7 +185,7 @@ app.listen(PORT, '0.0.0.0', () => {
     ? `${process.env.RENDER_EXTERNAL_URL}/api/health`
     : `http://localhost:${PORT}/api/health`;
 
-  setInterval(() => keepAlive(selfUrl), 10_000);
+  setInterval(() => keepAlive(selfUrl), 14 * 60 * 1000);
 
   setupDatabase()
     .then(() => console.log('NeonDB connected and ready'))

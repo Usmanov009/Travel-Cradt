@@ -41,6 +41,7 @@ async function updateBooking(req, res) {
        RETURNING *`,
       [status, name, phone, guests, days, id]
     );
+    if (rows.length === 0) return res.status(404).json({ error: 'Booking not found' });
     return res.json(rows[0]);
   } catch (err) {
     return res.status(400).json({ error: err.message });

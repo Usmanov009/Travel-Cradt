@@ -78,7 +78,7 @@ Always respond ${langLabel(lang)}. Be concise and helpful (max 3 short paragraph
     res.json({ reply: completion.choices[0].message.content });
   } catch (err) {
     console.error('Groq chat error:', err.status, err.message);
-    res.status(500).json({ error: 'Failed to get AI response', detail: err.message });
+    res.status(500).json({ error: 'Failed to get AI response' });
   }
 }
 
@@ -197,7 +197,7 @@ Rules:
     res.json(result);
   } catch (err) {
     console.error('Groq itinerary error:', err.status, err.message);
-    res.status(500).json({ error: 'Failed to generate itinerary', detail: err.message });
+    res.status(500).json({ error: 'Failed to generate itinerary' });
   }
 }
 

@@ -29,6 +29,9 @@ router.post('/register', async (req, res) => {
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, phone: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, name: user.name, phone: user.email, role: user.role } });
+  } catch (err) {
+    console.error('Register error:', err.message);
+    res.status(500).json({ error: "Server xatosi yuz berdi" });
   } finally {
     client.release();
   }
@@ -51,6 +54,9 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id, phone: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, name: user.name, phone: user.email, role: user.role } });
+  } catch (err) {
+    console.error('Login error:', err.message);
+    res.status(500).json({ error: "Server xatosi yuz berdi" });
   } finally {
     client.release();
   }

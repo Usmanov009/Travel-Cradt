@@ -1401,7 +1401,7 @@ export function CustomPackagePage() {
                   <div className="text-left bg-white rounded-2xl p-5 border border-purple-100 shadow-sm mt-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Sparkles className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-semibold text-purple-600">DeepSeek AI</span>
+                      <span className="text-sm font-semibold text-purple-600">Groq AI</span>
                     </div>
                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{aiRecommendation}</p>
                   </div>
