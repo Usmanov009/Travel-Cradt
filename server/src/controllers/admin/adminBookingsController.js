@@ -3,15 +3,26 @@ const https = require('https');
 
 function notifyTelegram(telegramId, text) {
   const token = process.env.BOT_TOKEN;
-  if (!token || !telegramId) return;
+  if (!token || !telegramId) {
+    console.log(`[notify] skipped — token:${!!token} tgId:${telegramId}`);
+    return;
+  }
   const body = JSON.stringify({ chat_id: String(telegramId), text });
   const req = https.request({
     hostname: 'api.telegram.org',
     path: `/bot${token}/sendMessage`,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+  }, (res) => {
+    let data = '';
+    res.on('data', (chunk) => { data += chunk; });
+    res.on('end', () => {
+      const parsed = JSON.parse(data);
+      if (!parsed.ok) console.error('[notify] Telegram error:', parsed.description);
+      else console.log(`[notify] sent to ${telegramId}`);
+    });
   });
-  req.on('error', (e) => console.error('Telegram notify error:', e.message));
+  req.on('error', (e) => console.error('[notify] request error:', e.message));
   req.write(body);
   req.end();
 }
@@ -51,7 +62,23 @@ async function updateBooking(req, res) {
     if (!rows.length) return res.status(404).json({ error: 'Booking not found' });
 
     const booking = rows[0];
-    if (status === 'accepted' && booking.telegram_id) {
+
+    // telegram_id yo'q bo'lsa, telefon orqali topamiz
+    let tgId = booking.telegram_id;
+    if (!tgId && booking.phone) {
+      const cleanPhone = String(booking.phone).replace(/\s/g, '');
+      const tgUser = await pool.query(
+        `SELECT telegram_id FROM telegram_users WHERE REPLACE(phone, ' ', '') = $1 LIMIT 1`,
+        [cleanPhone]
+      );
+      if (tgUser.rows.length > 0) {
+        tgId = tgUser.rows[0].telegram_id;
+        // Keyingi safar tez topilishi uchun saqlaymiz
+        await pool.query('UPDATE bookings SET telegram_id = $1 WHERE id = $2', [tgId, booking.id]);
+      }
+    }
+
+    if (status === 'accepted') {
       const msg =
         `✅ Sizning broningiz qabul qilindi!\n\n` +
         `🌍 Tur: ${booking.title}\n` +
@@ -59,12 +86,12 @@ async function updateBooking(req, res) {
         `👥 Mehmonlar: ${booking.guests} kishi\n` +
         `💰 Narx: $${booking.price}\n\n` +
         `Tez orada siz bilan bog'lanamiz. Savollar uchun adminga yozing.`;
-      notifyTelegram(booking.telegram_id, msg);
-    } else if (status === 'rejected' && booking.telegram_id) {
+      notifyTelegram(tgId, msg);
+    } else if (status === 'rejected') {
       const msg =
         `❌ Afsuski, "${booking.title}" turingizga bron rad etildi.\n\n` +
         `Boshqa turlarni ko'rish uchun ilovani oching.`;
-      notifyTelegram(booking.telegram_id, msg);
+      notifyTelegram(tgId, msg);
     }
 
     return res.json({ booking });
