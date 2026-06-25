@@ -71,7 +71,7 @@ export function PackageDetailPage() {
       .catch(() => {});
   }, []);
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!packageData) return;
     if (!user) { setShowLoginModal(true); return; }
     if (!name.trim() || !phone.trim()) {
@@ -83,12 +83,13 @@ export function PackageDetailPage() {
     const existingIndex = bookings.findIndex(
       (item) => item.type === packageData.type && item.id === packageData.id,
     );
+    const finalPrice = calculatePackagePrice(packageData.price, guests);
     const bookingRecord: StoredBooking = {
       id: packageData.id,
       type: packageData.type,
       title: packageData.title,
       basePrice: packageData.price,
-      price: calculatePackagePrice(packageData.price, guests),
+      price: finalPrice,
       name: name.trim(),
       phone: phone.trim(),
       guests,
@@ -106,6 +107,23 @@ export function PackageDetailPage() {
 
     localStorage.setItem("travelcraft_bookings", JSON.stringify(bookings));
     setExistingBooking(bookingRecord);
+
+    // NeonDB ga ham saqlash (admin panel ko'rishi uchun)
+    fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: packageData.title,
+        type: packageData.type,
+        price: finalPrice,
+        name: name.trim(),
+        phone: phone.trim(),
+        guests,
+        days: 1,
+        status: "pending",
+      }),
+    }).catch(() => {});
+
     setTimeout(() => {
       navigate("/dashboard");
     }, 1200);
