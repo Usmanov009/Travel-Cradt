@@ -65,18 +65,20 @@ async function updateBooking(req, res) {
 
     // telegram_id yo'q bo'lsa, telefon orqali topamiz
     let tgId = booking.telegram_id;
-    if (!tgId && booking.phone) {
-      const cleanPhone = String(booking.phone).replace(/\s/g, '');
-      const tgUser = await pool.query(
-        `SELECT telegram_id FROM telegram_users WHERE REPLACE(phone, ' ', '') = $1 LIMIT 1`,
-        [cleanPhone]
-      );
-      if (tgUser.rows.length > 0) {
-        tgId = tgUser.rows[0].telegram_id;
-        // Keyingi safar tez topilishi uchun saqlaymiz
-        await pool.query('UPDATE bookings SET telegram_id = $1 WHERE id = $2', [tgId, booking.id]);
+    try {
+      if (!tgId && booking.phone) {
+        const cleanPhone = String(booking.phone).replace(/\s/g, '');
+        const tgUser = await pool.query(
+          `SELECT telegram_id FROM telegram_users WHERE REPLACE(phone, ' ', '') = $1 LIMIT 1`,
+          [cleanPhone]
+        );
+        if (tgUser.rows.length > 0) {
+          tgId = tgUser.rows[0].telegram_id;
+          // Keyingi safar tez topilishi uchun saqlaymiz
+          await pool.query('UPDATE bookings SET telegram_id = $1 WHERE id = $2', [tgId, booking.id]).catch(() => {});
+        }
       }
-    }
+    } catch {}
 
     if (status === 'accepted') {
       const msg =
