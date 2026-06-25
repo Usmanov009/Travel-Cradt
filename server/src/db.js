@@ -1,5 +1,9 @@
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
 const { Pool } = require('pg');
+
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: false });
+dotenv.config({ path: path.join(__dirname, '../.env'), override: true });
 
 // Remove sslmode from URL to avoid duplicate SSL config warning in pg v8.11+
 // SSL is handled via the 'ssl' option below instead

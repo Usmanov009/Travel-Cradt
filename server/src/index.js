@@ -1,9 +1,13 @@
-try { require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }); } catch (_) {}
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.join(__dirname, '../../.env'), override: false });
+dotenv.config({ path: path.join(__dirname, '../.env'), override: true });
+
 const express = require('express');
 const cors = require('cors');
 const https = require('https');
 const http = require('http');
-const path = require('path');
 const pool = require('./db');
 let createBot = () => null;
 let getTelegramUser = async () => null;
@@ -19,7 +23,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    return res.json({ ok: true, db: true });
+  } catch (err) {
+    return res.status(503).json({ ok: false, db: false, error: err.message });
+  }
+});
 
 // Telegram foydalanuvchi ma'lumotlarini qaytarish
 app.get('/api/tg-user/:telegram_id', async (req, res) => {
