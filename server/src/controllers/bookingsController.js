@@ -13,12 +13,12 @@ async function getBookings(req, res) {
 
 async function createBooking(req, res) {
   try {
-    const { title, type, price, name, phone, guests, days, status } = req.body;
+    const { title, type, price, name, phone, guests, days, status, telegram_id, travel_date } = req.body;
     const { rows } = await pool.query(
-      `INSERT INTO bookings (title, type, price, name, phone, guests, days, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        RETURNING *`,
-      [title, type, price, name, phone, guests || 1, days || 1, status || 'pending']
+      [title, type, price, name, phone, guests || 1, days || 1, status || 'pending', telegram_id || null, travel_date || null]
     );
     return res.status(201).json(rows[0]);
   } catch (err) {

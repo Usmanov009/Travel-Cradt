@@ -17,6 +17,12 @@ export interface StoredBooking {
   hotelType?: string;
   transport?: string;
   destinationType?: string;
+  /** DB row id for status sync */
+  dbId?: number;
+  /** Status synced from DB */
+  status?: string;
+  /** Planned travel date */
+  travelDate?: string;
 }
 
 export function calculatePackagePrice(basePrice: number, guests: number): number {

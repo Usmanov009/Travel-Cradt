@@ -152,6 +152,14 @@ async function setupDatabase() {
       ALTER TABLE packages ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES tour_companies(id) ON DELETE SET NULL;
     `).catch(() => {});
 
+    // telegram_id va travel_date ustunlarini bookings jadvaliga qo'shish
+    await client.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS telegram_id VARCHAR(50);
+    `).catch(() => {});
+    await client.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS travel_date DATE;
+    `).catch(() => {});
+
     console.log('Database tables ready.');
 
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();

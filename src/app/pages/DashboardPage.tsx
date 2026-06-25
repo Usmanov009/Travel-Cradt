@@ -23,7 +23,7 @@ export function DashboardPage() {
   const [bookings, setBookings] = useState<StoredBooking[]>([]);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
+  const [editTravelDate, setEditTravelDate] = useState("");
   const [editGuests, setEditGuests] = useState(1);
 
   const loadBookings = () => {
@@ -31,10 +31,36 @@ export function DashboardPage() {
       localStorage.getItem("travelcraft_bookings") || "[]",
     );
     setBookings(stored);
+    return stored;
+  };
+
+  const syncStatuses = async (stored: StoredBooking[]) => {
+    const withDbId = stored.filter((b) => b.dbId);
+    if (withDbId.length === 0) return;
+    try {
+      const res = await fetch("/api/bookings");
+      if (!res.ok) return;
+      const dbRows: any[] = await res.json();
+      let changed = false;
+      const updated = stored.map((b) => {
+        if (!b.dbId) return b;
+        const row = dbRows.find((r) => r.id === b.dbId);
+        if (row && row.status !== b.status) {
+          changed = true;
+          return { ...b, status: row.status };
+        }
+        return b;
+      });
+      if (changed) {
+        localStorage.setItem("travelcraft_bookings", JSON.stringify(updated));
+        setBookings(updated);
+      }
+    } catch {}
   };
 
   useEffect(() => {
-    loadBookings();
+    const stored = loadBookings();
+    syncStatuses(stored);
     const onStorage = (e: StorageEvent) => {
       if (e.key === "travelcraft_bookings") loadBookings();
     };
@@ -55,7 +81,7 @@ export function DashboardPage() {
   const handleStartEdit = (booking: StoredBooking) => {
     setEditingKey(`${booking.type}-${booking.id}`);
     setEditName(booking.name);
-    setEditPhone(booking.phone);
+    setEditTravelDate(booking.travelDate ?? "");
     setEditGuests(booking.guests);
   };
 
@@ -68,7 +94,7 @@ export function DashboardPage() {
       const next = {
         ...item,
         name: editName,
-        phone: editPhone,
+        travelDate: editTravelDate || undefined,
         guests: Math.max(1, editGuests),
         basePrice: resolveBasePrice(item),
       };
@@ -266,23 +292,35 @@ export function DashboardPage() {
                           <span className="truncate">{booking.name || "—"}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-slate-600">
-                          <span className="text-slate-400 shrink-0">📞</span>
-                          <span className="truncate">{booking.phone || "—"}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-slate-600">
                           <Users className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                           <span>{booking.guests} mehmon</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-slate-600">
                           <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                           <span className="truncate">
-                            {new Date(booking.bookedAt).toLocaleDateString("uz-UZ")}
+                            Bron: {new Date(booking.bookedAt).toLocaleDateString("uz-UZ")}
                           </span>
                         </div>
-                        {booking.days !== undefined && (
-                          <div className="flex items-center gap-1.5 text-slate-600 col-span-2">
-                            <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                            <span>{booking.days} kun</span>
+                        {booking.travelDate && (
+                          <div className="flex items-center gap-1.5 text-slate-600">
+                            <Calendar className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+                            <span className="truncate text-emerald-700 font-medium">
+                              Sayohat: {new Date(booking.travelDate).toLocaleDateString("uz-UZ")}
+                            </span>
+                          </div>
+                        )}
+                        {/* Status badge */}
+                        {booking.status && (
+                          <div className="col-span-2 mt-1">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              booking.status === "accepted"
+                                ? "bg-green-100 text-green-700"
+                                : booking.status === "rejected"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            }`}>
+                              {booking.status === "accepted" ? "✅ Qabul qilindi" : booking.status === "rejected" ? "❌ Rad etildi" : "⏳ Kutmoqda"}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -302,36 +340,40 @@ export function DashboardPage() {
                             : <><Pencil className="w-3.5 h-3.5" /> Tahrirlash</>
                           }
                         </button>
-                        <button
-                          onClick={() => handleClearBooking(booking.id, booking.type)}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-100 px-3 py-2 text-xs sm:text-sm text-red-500 hover:bg-red-50 transition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">O'chirish</span>
-                        </button>
+                        {booking.status !== "accepted" && (
+                          <button
+                            onClick={() => handleClearBooking(booking.id, booking.type)}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-100 px-3 py-2 text-xs sm:text-sm text-red-500 hover:bg-red-50 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">O'chirish</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* Edit form */}
                       {isEditing && (
                         <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <label className="flex flex-col gap-1 text-xs">
-                            <span className="font-medium text-slate-600">Ism</span>
+                          <label className="flex flex-col gap-1 text-xs sm:col-span-2">
+                            <span className="font-medium text-slate-600">Ism Familiya</span>
                             <input
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
+                              placeholder="To'liq ism va familiya"
                               className="rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             />
                           </label>
                           <label className="flex flex-col gap-1 text-xs">
-                            <span className="font-medium text-slate-600">Telefon</span>
+                            <span className="font-medium text-slate-600">Sayohat sanasi</span>
                             <input
-                              value={editPhone}
-                              onChange={(e) => setEditPhone(e.target.value)}
+                              type="date"
+                              value={editTravelDate}
+                              onChange={(e) => setEditTravelDate(e.target.value)}
                               className="rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             />
                           </label>
-                          <label className="flex flex-col gap-1 text-xs sm:col-span-2">
-                            <span className="font-medium text-slate-600">Mehmonlar soni</span>
+                          <label className="flex flex-col gap-1 text-xs">
+                            <span className="font-medium text-slate-600">Odamlar soni</span>
                             <input
                               type="number"
                               min={1}

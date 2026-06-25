@@ -109,20 +109,37 @@ export function PackageDetailPage() {
     setExistingBooking(bookingRecord);
 
     // NeonDB ga ham saqlash (admin panel ko'rishi uchun)
-    fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: packageData.title,
-        type: packageData.type,
-        price: finalPrice,
-        name: name.trim(),
-        phone: phone.trim(),
-        guests,
-        days: 1,
-        status: "pending",
-      }),
-    }).catch(() => {});
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      const telegramId = tg?.initDataUnsafe?.user?.id?.toString() ?? null;
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: packageData.title,
+          type: packageData.type,
+          price: finalPrice,
+          name: name.trim(),
+          phone: phone.trim(),
+          guests,
+          days: 1,
+          status: "pending",
+          telegram_id: telegramId,
+        }),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        // dbId va status ni localStorage ga saqlash
+        const fresh: StoredBooking[] = JSON.parse(localStorage.getItem("travelcraft_bookings") || "[]");
+        const idx = fresh.findIndex(
+          (item) => item.type === packageData.type && item.id === packageData.id,
+        );
+        if (idx !== -1) {
+          fresh[idx] = { ...fresh[idx], dbId: saved.id, status: "pending" };
+          localStorage.setItem("travelcraft_bookings", JSON.stringify(fresh));
+        }
+      }
+    } catch {}
 
     setTimeout(() => {
       navigate("/dashboard");
