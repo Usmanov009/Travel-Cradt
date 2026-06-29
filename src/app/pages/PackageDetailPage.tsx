@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, CheckCircle2, ArrowLeft, Star } from "lucide-react";
-import { getPackageBySlug, PackageType } from "../data/packages";
+import type { TravelPackage } from "../data/packages";
 import { getPackageImages } from "../data/packageMedia";
+import { mapDbPackage } from "../hooks/usePackages";
 import { getAppLang } from "../utils/locale";
 import { PackageImage } from "../components/PackageImage";
 import { useAuth } from "../contexts/AuthContext";
@@ -20,7 +21,8 @@ export function PackageDetailPage() {
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [packageData, setPackageData] = useState<ReturnType<typeof getPackageBySlug> | null>(null);
+  const [packageData, setPackageData] = useState<TravelPackage | null>(null);
+  const [pkgLoading, setPkgLoading] = useState(true);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [guests, setGuests] = useState(1);
@@ -31,12 +33,14 @@ export function PackageDetailPage() {
     : 0;
 
   useEffect(() => {
-    if (!params.type || !params.id) return;
-    const type = params.type as PackageType;
-    const id = Number(params.id);
-    const pkg = getPackageBySlug(type, id);
-    setPackageData(pkg ?? null);
-  }, [params.type, params.id]);
+    if (!params.id) return;
+    setPkgLoading(true);
+    fetch(`/api/packages/${params.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setPackageData(data ? mapDbPackage(data) : null))
+      .catch(() => setPackageData(null))
+      .finally(() => setPkgLoading(false));
+  }, [params.id]);
 
   useEffect(() => {
     if (!packageData) return;
@@ -145,6 +149,14 @@ export function PackageDetailPage() {
       navigate("/dashboard");
     }, 1200);
   };
+
+  if (pkgLoading) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center text-slate-400">
+        Yuklanmoqda...
+      </div>
+    );
+  }
 
   if (!packageData) {
     return (

@@ -2,10 +2,25 @@ const pool = require('../db');
 
 async function getPackages(req, res) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM packages ORDER BY created_at DESC LIMIT 200'
-    );
+    const { type } = req.query;
+    let query = 'SELECT * FROM packages ORDER BY created_at DESC LIMIT 200';
+    const params = [];
+    if (type) {
+      query = 'SELECT * FROM packages WHERE type = $1 ORDER BY created_at DESC LIMIT 200';
+      params.push(type);
+    }
+    const { rows } = await pool.query(query, params);
     return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+async function getPackageById(req, res) {
+  try {
+    const { rows } = await pool.query('SELECT * FROM packages WHERE id = $1', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Package not found' });
+    return res.json(rows[0]);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -31,4 +46,4 @@ async function createPackage(req, res) {
   }
 }
 
-module.exports = { getPackages, createPackage };
+module.exports = { getPackages, createPackage, getPackageById };

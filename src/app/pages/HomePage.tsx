@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { getPackagesByType } from "../data/packages";
+import { usePackages } from "../hooks/usePackages";
 import {
   MapPin, Plane, Globe2, Mountain, Building2, Palmtree,
   Sparkles, ShieldCheck, Headphones, BadgeDollarSign,
@@ -19,8 +19,10 @@ export function HomePage() {
   const { t, i18n } = useTranslation();
   const lang = getAppLang(i18n.language);
 
-  const popularDomestic = getPackagesByType("domestic").slice(0, 4);
-  const popularInternational = getPackagesByType("international").slice(0, 4);
+  const { packages: domesticAll } = usePackages("domestic");
+  const { packages: internationalAll } = usePackages("international");
+  const popularDomestic = domesticAll.slice(0, 4);
+  const popularInternational = internationalAll.slice(0, 4);
 
   const getLocalTitle = (pkg: TravelPackage) =>
     pkg.translations?.[lang]?.title || pkg.title;

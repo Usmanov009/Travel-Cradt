@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { PackageCard } from "../components/PackageCard";
-import { getPackagesByType } from "../data/packages";
+import { usePackages } from "../hooks/usePackages";
 import { Search, SlidersHorizontal, Globe2 } from "lucide-react";
 
 export function InternationalTravelPage() {
@@ -16,6 +16,8 @@ export function InternationalTravelPage() {
     if (cat) setSelectedCategory(cat);
   }, [searchParams]);
 
+  const { packages, loading } = usePackages("international");
+
   const categories = [
     { id: "all", label: "All" },
     { id: "beach", label: t("international.beach") },
@@ -26,8 +28,6 @@ export function InternationalTravelPage() {
     { id: "shopping", label: t("international.shopping") },
     { id: "adventure", label: t("international.adventurePkg") },
   ];
-
-  const packages = getPackagesByType("international");
 
   const filteredPackages = packages.filter((pkg) => {
     const matchesCategory =
@@ -125,13 +125,17 @@ export function InternationalTravelPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
-          {filteredPackages.map((pkg) => (
-            <PackageCard key={pkg.id} {...pkg} type="international" />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-16 text-slate-400">Yuklanmoqda...</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+            {filteredPackages.map((pkg) => (
+              <PackageCard key={pkg.id} {...pkg} type="international" />
+            ))}
+          </div>
+        )}
 
-        {filteredPackages.length === 0 && (
+        {!loading && filteredPackages.length === 0 && (
           <div className="text-center py-16 sm:py-24">
             <div className="text-5xl mb-4">🔍</div>
             <p className="text-slate-500 text-base sm:text-lg">

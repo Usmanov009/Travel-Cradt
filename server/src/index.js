@@ -13,7 +13,7 @@ let createBot = () => null;
 let getTelegramUser = async () => null;
 try { ({ createBot, getTelegramUser } = require('./bot')); } catch (e) { console.warn('Bot yuklanmadi:', e.message); }
 
-const { getPackages, createPackage } = require('./controllers/packagesController');
+const { getPackages, createPackage, getPackageById } = require('./controllers/packagesController');
 const { getBookings, createBooking, updateBooking } = require('./controllers/bookingsController');
 const { enrichCountry } = require('./controllers/enrichController');
 const { getAiRecommendation, chatWithAi, getDestinationInfo, getItinerary } = require('./controllers/aiController');
@@ -51,6 +51,7 @@ app.post('/api/ai/destination-info', getDestinationInfo);
 app.post('/api/ai/itinerary', getItinerary);
 
 app.get('/api/packages', getPackages);
+app.get('/api/packages/:id', getPackageById);
 app.post('/api/packages', createPackage);
 
 app.get('/api/bookings', getBookings);
