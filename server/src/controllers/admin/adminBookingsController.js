@@ -2,7 +2,7 @@ const pool = require('../../db');
 const https = require('https');
 
 function notifyTelegram(telegramId, text) {
-  const token = process.env.BOT_TOKEN;
+  const token = (process.env.BOT_TOKEN || '').trim();
   if (!token || !telegramId) {
     console.log(`[notify] skipped — token:${!!token} tgId:${telegramId}`);
     return;
@@ -95,20 +95,24 @@ async function updateBooking(req, res) {
       }
     } catch {}
 
-    if (status === 'accepted') {
-      const msg =
-        `✅ Sizning broningiz qabul qilindi!\n\n` +
-        `🌍 Tur: ${booking.title}\n` +
-        `👤 Ism: ${booking.name}\n` +
-        `👥 Mehmonlar: ${booking.guests} kishi\n` +
-        `💰 Narx: $${booking.price}\n\n` +
-        `Tez orada siz bilan bog'lanamiz. Savollar uchun adminga yozing.`;
-      notifyTelegram(tgId, msg);
-    } else if (status === 'rejected') {
-      const msg =
-        `❌ Afsuski, "${booking.title}" turingizga bron rad etildi.\n\n` +
-        `Boshqa turlarni ko'rish uchun ilovani oching.`;
-      notifyTelegram(tgId, msg);
+    try {
+      if (status === 'accepted') {
+        const msg =
+          `✅ Sizning broningiz qabul qilindi!\n\n` +
+          `🌍 Tur: ${booking.title}\n` +
+          `👤 Ism: ${booking.name}\n` +
+          `👥 Mehmonlar: ${booking.guests} kishi\n` +
+          `💰 Narx: $${booking.price}\n\n` +
+          `Tez orada siz bilan bog'lanamiz. Savollar uchun adminga yozing.`;
+        notifyTelegram(tgId, msg);
+      } else if (status === 'rejected') {
+        const msg =
+          `❌ Afsuski, "${booking.title}" turingizga bron rad etildi.\n\n` +
+          `Boshqa turlarni ko'rish uchun ilovani oching.`;
+        notifyTelegram(tgId, msg);
+      }
+    } catch (notifyErr) {
+      console.error('[notify] failed, continuing:', notifyErr.message);
     }
 
     return res.json({ booking });
