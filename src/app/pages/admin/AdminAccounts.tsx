@@ -24,7 +24,7 @@ export default function AdminAccounts() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', company_id: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', company_id: '', company_name_input: '' });
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [resetId, setResetId] = useState<number | null>(null);
@@ -56,20 +56,26 @@ export default function AdminAccounts() {
     setFormError(null);
     setSaving(true);
     try {
+      // company_name_input bo'yicha mos company_id topamiz
+      const matched = companies.find(
+        c => c.name.toLowerCase() === form.company_name_input.toLowerCase()
+      );
+      const resolvedCompanyId = matched ? matched.id : (form.company_id ? parseInt(form.company_id) : null);
+
       const res = await adminFetch('/admin-accounts', token!, {
         method: 'POST',
         body: JSON.stringify({
           name: form.name,
           email: form.email,
           password: form.password,
-          company_id: form.company_id ? parseInt(form.company_id) : null,
+          company_id: resolvedCompanyId,
         }),
       });
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error || 'Xatolik yuz berdi');
       }
-      setForm({ name: '', email: '', password: '', company_id: '' });
+      setForm({ name: '', email: '', password: '', company_id: '', company_name_input: '' });
       setShowForm(false);
       load();
     } catch (err: any) {
@@ -165,16 +171,27 @@ export default function AdminAccounts() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tur firma</label>
-              <select
+              <input
+                type="text"
+                list="companies-datalist"
                 className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={form.company_id}
-                onChange={e => setForm(f => ({ ...f, company_id: e.target.value }))}
-              >
-                <option value="">— Tanlang —</option>
+                value={form.company_name_input}
+                onChange={e => setForm(f => ({ ...f, company_name_input: e.target.value }))}
+                placeholder="Tur firma nomini yozing..."
+                autoComplete="off"
+              />
+              <datalist id="companies-datalist">
                 {companies.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.name} />
                 ))}
-              </select>
+              </datalist>
+              {form.company_name_input && !companies.find(
+                c => c.name.toLowerCase() === form.company_name_input.toLowerCase()
+              ) && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Ushbu nom bazada topilmadi — admin firmaga biriktirilmaydi
+                </p>
+              )}
             </div>
             <div className="col-span-full">
               <button
