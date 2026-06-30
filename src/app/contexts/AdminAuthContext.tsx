@@ -1,11 +1,19 @@
 import React, { createContext, useState, useEffect } from 'react';
 
-type User = { id: string; email: string; name?: string; role?: string } | null;
+type User = {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  company_id?: number | null;
+} | null;
 
 export const AdminAuthContext = createContext({
   user: null as User | null,
   token: null as string | null,
-  login: async (email: string, password: string) => {},
+  isSuperAdmin: false,
+  isCompanyAdmin: false,
+  login: async (_email: string, _password: string) => {},
   logout: () => {},
 });
 
@@ -46,8 +54,11 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const logout = () => { setToken(null); setUser(null); };
 
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isCompanyAdmin = user?.role === 'admin';
+
   return (
-    <AdminAuthContext.Provider value={{ user, token, login, logout }}>
+    <AdminAuthContext.Provider value={{ user, token, isSuperAdmin, isCompanyAdmin, login, logout }}>
       {children}
     </AdminAuthContext.Provider>
   );

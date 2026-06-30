@@ -78,6 +78,7 @@ try {
   app.use('/api/admin/companies', require('./routes/admin/companies'));
   app.use('/api/admin/bookings', require('./routes/admin/bookings'));
   app.use('/api/admin/revenue', require('./routes/admin/revenue'));
+  app.use('/api/admin/admin-accounts', require('./routes/admin/adminAccounts'));
   console.log('Admin routes loaded.');
 } catch (err) {
   console.error('Admin routes failed to load:', err.message);
@@ -170,9 +171,14 @@ async function setupDatabase() {
       );
     `);
 
-    // company_id ustunini packages jadvaliga qo'shish (admin Packages/Companies sahifalari uchun)
+    // company_id ustunini packages jadvaliga qo'shish
     await client.query(`
       ALTER TABLE packages ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES tour_companies(id) ON DELETE SET NULL;
+    `).catch(() => {});
+
+    // company_id ustunini users jadvaliga qo'shish (tur firma adminlari uchun)
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES tour_companies(id) ON DELETE SET NULL;
     `).catch(() => {});
 
     // telegram_id va travel_date ustunlarini bookings jadvaliga qo'shish
@@ -187,14 +193,18 @@ async function setupDatabase() {
 
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin@1shu';
-    const { rows } = await client.query('SELECT id FROM users WHERE email = $1', [adminEmail]);
+    const { rows } = await client.query('SELECT id, role FROM users WHERE email = $1', [adminEmail]);
     if (rows.length === 0) {
       const hash = await bcrypt.hash(adminPassword, 10);
       await client.query(
-        `INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, 'admin')`,
-        ['Admin', adminEmail, hash]
+        `INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, 'super_admin')`,
+        ['Super Admin', adminEmail, hash]
       );
-      console.log('Admin user created:', adminEmail);
+      console.log('Super admin created:', adminEmail);
+    } else if (rows[0].role === 'admin') {
+      // Eskidan 'admin' bo'lib yaratilgan bo'lsa, 'super_admin' ga yangilaymiz
+      await client.query(`UPDATE users SET role = 'super_admin', name = 'Super Admin' WHERE email = $1`, [adminEmail]);
+      console.log('Upgraded to super_admin:', adminEmail);
     }
   } finally {
     client.release();

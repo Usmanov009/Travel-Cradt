@@ -17,10 +17,17 @@ async function login(req, res) {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ error: 'Invalid credentials' });
 
-    if (user.role !== 'admin') return res.status(403).json({ error: 'Not an admin' });
+    if (user.role !== 'admin' && user.role !== 'super_admin') return res.status(403).json({ error: 'Not an admin' });
 
-    const token = jwt.sign({ id: user.id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: '12h' });
-    return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+    const token = jwt.sign(
+      { id: user.id, role: user.role, email: user.email, company_id: user.company_id || null },
+      JWT_SECRET,
+      { expiresIn: '12h' }
+    );
+    return res.json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, company_id: user.company_id || null },
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });

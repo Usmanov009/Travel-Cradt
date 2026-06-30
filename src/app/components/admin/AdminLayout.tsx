@@ -2,19 +2,27 @@ import React, { useContext, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 
-const navItems = [
+const superAdminNav = [
   { to: '/admin', label: 'Dashboard', icon: '📊', exact: true },
   { to: '/admin/packages', label: 'Turlar', icon: '🌍' },
   { to: '/admin/bookings', label: 'Bronlar', icon: '📋' },
   { to: '/admin/users', label: 'Foydalanuvchilar', icon: '👥' },
   { to: '/admin/companies', label: 'Tur Firmalar', icon: '🏢' },
   { to: '/admin/revenue', label: 'Daromad', icon: '💰' },
+  { to: '/admin/admin-accounts', label: 'Admin Boshqaruvi', icon: '🔑' },
+];
+
+const companyAdminNav = [
+  { to: '/admin/packages', label: 'Mening turlarim', icon: '🌍' },
+  { to: '/admin/bookings', label: 'Bronlar', icon: '📋' },
 ];
 
 export default function AdminLayout() {
-  const { user, logout } = useContext(AdminAuthContext);
+  const { user, logout, isSuperAdmin } = useContext(AdminAuthContext);
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+
+  const navItems = isSuperAdmin ? superAdminNav : companyAdminNav;
 
   const isActive = (to: string, exact?: boolean) => {
     if (exact) return location.pathname === to;
@@ -32,7 +40,9 @@ export default function AdminLayout() {
           {!collapsed && (
             <div>
               <div className="font-bold text-lg">TravelCraft</div>
-              <div className="text-blue-300 text-xs">Super Admin</div>
+              <div className={`text-xs font-medium px-2 py-0.5 rounded mt-1 inline-block ${isSuperAdmin ? 'bg-yellow-500 text-yellow-900' : 'bg-blue-500 text-white'}`}>
+                {isSuperAdmin ? 'Super Admin' : 'Tur Firma'}
+              </div>
             </div>
           )}
           <button
@@ -65,8 +75,9 @@ export default function AdminLayout() {
         <div className="border-t border-blue-700 p-4">
           {!collapsed && (
             <div className="mb-3">
-              <div className="text-xs text-blue-300">Kirgan admin:</div>
-              <div className="text-sm font-medium truncate">{user?.email}</div>
+              <div className="text-xs text-blue-300">Kirgan foydalanuvchi:</div>
+              <div className="text-sm font-medium truncate">{user?.name || user?.email}</div>
+              <div className="text-xs text-blue-400 truncate">{user?.email}</div>
             </div>
           )}
           <button

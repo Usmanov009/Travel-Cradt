@@ -30,17 +30,32 @@ function notifyTelegram(telegramId, text) {
 async function getBookings(req, res) {
   try {
     const { status, limit = 50, offset = 0 } = req.query;
-    let query = 'SELECT * FROM bookings';
     const params = [];
-    if (status) {
-      query += ' WHERE status = $1';
+    let whereClause = '';
+
+    // Tur firma admini faqat o'z kompaniyasiga tegishli bronlarni ko'radi
+    if (req.user.role === 'admin' && req.user.company_id) {
+      whereClause = `WHERE b.title IN (
+        SELECT p.title FROM packages p WHERE p.company_id = $${params.length + 1}
+      )`;
+      params.push(req.user.company_id);
+      if (status) {
+        whereClause += ` AND b.status = $${params.length + 1}`;
+        params.push(status);
+      }
+    } else if (status) {
+      whereClause = `WHERE status = $${params.length + 1}`;
       params.push(status);
     }
-    query += ' ORDER BY booked_at DESC LIMIT $' + (params.length + 1) + ' OFFSET $' + (params.length + 2);
+
+    const query = `SELECT b.* FROM bookings b ${whereClause} ORDER BY b.booked_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
     params.push(limit, offset);
 
+    const countQuery = `SELECT COUNT(*) FROM bookings b ${whereClause}`;
+    const countParams = params.slice(0, params.length - 2);
+
     const { rows } = await pool.query(query, params);
-    const countRes = await pool.query(status ? 'SELECT COUNT(*) FROM bookings WHERE status=$1' : 'SELECT COUNT(*) FROM bookings', status ? [status] : []);
+    const countRes = await pool.query(countQuery, countParams);
     return res.json({ bookings: rows, total: parseInt(countRes.rows[0].count) });
   } catch (err) {
     console.error('[getBookings] error:', err);

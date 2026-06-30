@@ -17,6 +17,7 @@ import AdminCompanies from "./pages/admin/Companies";
 import AdminBookings from "./pages/admin/Bookings";
 import AdminRevenue from "./pages/admin/Revenue";
 import AdminLogin from "./pages/admin/Login";
+import AdminAccounts from "./pages/admin/AdminAccounts";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
       { path: "companies", Component: AdminCompanies },
       { path: "bookings", Component: AdminBookings },
       { path: "revenue", Component: AdminRevenue },
+      { path: "admin-accounts", Component: AdminAccounts },
     ],
   },
   {
