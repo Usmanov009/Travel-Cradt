@@ -28,9 +28,10 @@ function getGroq() {
 }
 
 function getWebAppUrl() {
-  return process.env.WEB_APP_URL ||
+  const url = process.env.WEB_APP_URL ||
     process.env.RENDER_EXTERNAL_URL ||
-    'https://travelcraft-ai.onrender.com';
+    'https://travel-ai-61u0.onrender.com';
+  return url.replace(/\/$/, '');
 }
 
 async function getTelegramUser(telegramId) {
