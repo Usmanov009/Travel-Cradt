@@ -54,6 +54,17 @@ app.get('/api/packages', getPackages);
 app.get('/api/packages/:id', getPackageById);
 app.post('/api/packages', createPackage);
 
+app.get('/api/companies', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, phone, address, website, description, logo FROM tour_companies WHERE status = 'approved' ORDER BY name`
+    );
+    return res.json({ companies: rows });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/bookings', getBookings);
 app.post('/api/bookings', createBooking);
 app.put('/api/bookings/:id', updateBooking);

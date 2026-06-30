@@ -43,6 +43,9 @@ import {
   Moon,
   Building2,
   Lock,
+  Phone,
+  Globe,
+  Building,
 } from "lucide-react";
 
 export function CustomPackagePage() {
@@ -78,10 +81,14 @@ export function CustomPackagePage() {
   type ItineraryDay = { day: number; title: string; items: ItineraryItem[] };
   type ItineraryVariant = { id: number; theme: string; emoji: string; description: string; title: string; days: ItineraryDay[] };
 
+  type TourCompany = { id: number; name: string; phone?: string; address?: string; website?: string; description?: string; logo?: string };
   const [itineraryVariants, setItineraryVariants] = useState<ItineraryVariant[] | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ItineraryVariant | null>(null);
   const [itineraryLoading, setItineraryLoading] = useState(false);
   const [itineraryError, setItineraryError] = useState("");
+  const [companies, setCompanies] = useState<TourCompany[]>([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<TourCompany | null>(null);
   const [dateError, setDateError] = useState("");
   const minBookableDate = getMinBookableDateString();
 
@@ -552,6 +559,17 @@ export function CustomPackagePage() {
 
   const handleSelectVariant = (variant: ItineraryVariant) => {
     setSelectedVariant(variant);
+    setSelectedCompany(null);
+    setCompaniesLoading(true);
+    fetch("/api/companies")
+      .then((r) => r.json())
+      .then((data) => { if (data.companies) setCompanies(data.companies); })
+      .catch(() => {})
+      .finally(() => setCompaniesLoading(false));
+  };
+
+  const handleConfirmWithCompany = (company: TourCompany | null) => {
+    setSelectedCompany(company ?? { id: 0, name: "Firma tanlanmadi" });
     const price = calculateCustomPrice({
       days: formData.days,
       travelers: formData.travelers,
@@ -563,7 +581,7 @@ export function CustomPackagePage() {
     const nextBooking = {
       id: Date.now(),
       type: "custom" as const,
-      title: variant.title || destinationLabel || t("customPackage.customTitle"),
+      title: selectedVariant?.title || destinationLabel || t("customPackage.customTitle"),
       price,
       name: formData.name || "",
       phone: formData.phone || "",
@@ -575,6 +593,7 @@ export function CustomPackagePage() {
       transport: formData.transport,
       destinationType: formData.destinationType,
       image: selectedDestination?.images[0] ?? PACKAGE_MEDIA["domestic-13"].cover,
+      companyName: company?.name ?? null,
     };
     const bookings = JSON.parse(localStorage.getItem("travelcraft_bookings") || "[]");
     bookings.push(nextBooking);
@@ -1526,7 +1545,103 @@ export function CustomPackagePage() {
     return "bg-emerald-100 text-emerald-600 border-emerald-200";
   };
 
-  if (selectedVariant) {
+  if (selectedVariant && !selectedCompany) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-10 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
+              <Building className="w-4 h-4" /> Tur firmani tanlang
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold">Qaysi tur firma bilan borasiz?</h1>
+            <p className="text-slate-500 mt-1">{selectedVariant.emoji} {selectedVariant.title} · {destinationLabel}</p>
+          </div>
+
+          {companiesLoading ? (
+            <div className="flex justify-center gap-1 py-12">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:0ms]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:150ms]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:300ms]" />
+            </div>
+          ) : (
+            <div className="space-y-4 mb-8">
+              {companies.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 bg-white rounded-[2rem] border border-slate-200">
+                  Hozircha tasdiqlangan tur firma yo'q
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {companies.map((company) => (
+                    <motion.button
+                      key={company.id}
+                      onClick={() => handleConfirmWithCompany(company)}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      whileHover={{ y: -4 }}
+                      className="text-left bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all group"
+                    >
+                      <div className="flex items-start gap-4">
+                        {company.logo ? (
+                          <img src={company.logo} alt={company.name} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0 border border-slate-200" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center flex-shrink-0">
+                            <Building className="w-7 h-7 text-blue-500" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-slate-900 text-lg leading-snug mb-1">{company.name}</h3>
+                          {company.description && (
+                            <p className="text-slate-500 text-sm mb-2 line-clamp-2">{company.description}</p>
+                          )}
+                          <div className="space-y-1">
+                            {company.phone && (
+                              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                                <Phone className="w-3 h-3" /> {company.phone}
+                              </div>
+                            )}
+                            {company.address && (
+                              <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                                <MapPin className="w-3 h-3" /> {company.address}
+                              </div>
+                            )}
+                            {company.website && (
+                              <div className="flex items-center gap-1.5 text-xs text-blue-500">
+                                <Globe className="w-3 h-3" /> {company.website}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-1 text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
+                        Bu firmani tanlash <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => handleConfirmWithCompany(null)}
+              className="flex-1 border border-slate-200 bg-white text-slate-600 py-4 rounded-2xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+            >
+              Firmasisiz davom etish
+            </button>
+            <button
+              onClick={() => setSelectedVariant(null)}
+              className="flex-1 border border-blue-200 bg-white text-blue-600 py-4 rounded-2xl font-semibold hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-5 h-5" /> Boshqa variant tanlash
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedVariant && selectedCompany) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-10 px-4">
         <div className="max-w-3xl mx-auto">
@@ -1537,6 +1652,23 @@ export function CustomPackagePage() {
             <h1 className="text-2xl md:text-3xl font-bold">{selectedVariant.title}</h1>
             <p className="text-slate-500 mt-1">{destinationLabel} · {formData.days} kun · {formData.travelers} kishi</p>
           </div>
+
+          {selectedCompany.id !== 0 && (
+            <div className="bg-white rounded-[2rem] border border-blue-200 p-5 mb-6 shadow-sm flex items-center gap-4">
+              {selectedCompany.logo ? (
+                <img src={selectedCompany.logo} alt={selectedCompany.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-slate-200" />
+              ) : (
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center flex-shrink-0">
+                  <Building className="w-6 h-6 text-blue-500" />
+                </div>
+              )}
+              <div>
+                <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-0.5">Tanlangan Tur Firma</p>
+                <p className="font-bold text-slate-900">{selectedCompany.name}</p>
+                {selectedCompany.phone && <p className="text-xs text-slate-400 mt-0.5">{selectedCompany.phone}</p>}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-6 mb-8">
             {selectedVariant.days.map((day: ItineraryDay) => (
@@ -1595,13 +1727,13 @@ export function CustomPackagePage() {
               <Check className="w-5 h-5" /> Dashboard'ga saqlash
             </button>
             <button
-              onClick={() => setSelectedVariant(null)}
+              onClick={() => setSelectedCompany(null)}
               className="flex-1 border border-blue-200 bg-white text-blue-600 py-4 rounded-2xl font-semibold hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
             >
-              <ArrowLeft className="w-5 h-5" /> Boshqa variant tanlash
+              <ArrowLeft className="w-5 h-5" /> Firma o'zgartirish
             </button>
             <button
-              onClick={() => { setItineraryVariants(null); setSelectedVariant(null); setPlanSelected(false); }}
+              onClick={() => { setItineraryVariants(null); setSelectedVariant(null); setSelectedCompany(null); setPlanSelected(false); }}
               className="flex-1 border border-slate-200 bg-white text-slate-700 py-4 rounded-2xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
             >
               Yangi tur yaratish
@@ -1659,7 +1791,7 @@ export function CustomPackagePage() {
 
           <div className="text-center">
             <button
-              onClick={() => { setItineraryVariants(null); setPlanSelected(false); }}
+              onClick={() => { setItineraryVariants(null); setSelectedVariant(null); setSelectedCompany(null); setPlanSelected(false); }}
               className="inline-flex items-center gap-2 border border-slate-200 bg-white text-slate-600 px-6 py-3 rounded-2xl font-semibold hover:bg-slate-50 transition-all"
             >
               <ArrowLeft className="w-4 h-4" /> Yangi tur yaratish
