@@ -24,6 +24,9 @@ export function mapDbPackage(pkg: any): TravelPackage {
     video: pkg.video ?? undefined,
     interests: pkg.interests ?? undefined,
     partners: pkg.partners ?? undefined,
+    companyId: pkg.company_id ?? undefined,
+    companyName: pkg.company_name ?? undefined,
+    companyLogo: pkg.company_logo ?? undefined,
     translations: pkg.translations ?? undefined,
   };
 }

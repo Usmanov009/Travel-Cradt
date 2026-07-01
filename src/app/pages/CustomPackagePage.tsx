@@ -1,12 +1,14 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginModal } from "../components/LoginModal";
 import { motion } from "motion/react";
 import { PACKAGE_MEDIA } from "../data/packageMedia";
 import { PackageImage } from "../components/PackageImage";
+import { PackageCard } from "../components/PackageCard";
 import { DestinationMap } from "../components/DestinationMap";
+import { usePackages } from "../hooks/usePackages";
+import type { PackageType, TravelPackage } from "../data/packages";
 import {
   getMinBookableDateString,
   isDateBookable,
@@ -26,9 +28,7 @@ import {
   ArrowLeft,
   Check,
   Utensils,
-  Clock,
   Navigation,
-  BedDouble,
   Download,
   Plane,
   Bus,
@@ -43,8 +43,6 @@ import {
   Moon,
   Building2,
   Lock,
-  Phone,
-  Globe,
   Building,
 } from "lucide-react";
 
@@ -77,18 +75,7 @@ export function CustomPackagePage() {
       () => {}
     );
   }, []);
-  type ItineraryItem = { time: string; type: string; place: string; note?: string; dish?: string };
-  type ItineraryDay = { day: number; title: string; items: ItineraryItem[] };
-  type ItineraryVariant = { id: number; theme: string; emoji: string; description: string; title: string; days: ItineraryDay[] };
-
-  type TourCompany = { id: number; name: string; phone?: string; address?: string; website?: string; description?: string; logo?: string };
-  const [itineraryVariants, setItineraryVariants] = useState<ItineraryVariant[] | null>(null);
-  const [selectedVariant, setSelectedVariant] = useState<ItineraryVariant | null>(null);
-  const [itineraryLoading, setItineraryLoading] = useState(false);
-  const [itineraryError, setItineraryError] = useState("");
-  const [companies, setCompanies] = useState<TourCompany[]>([]);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<TourCompany | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const [dateError, setDateError] = useState("");
   const minBookableDate = getMinBookableDateString();
 
@@ -114,6 +101,10 @@ export function CustomPackagePage() {
     name: "",
     phone: "",
   });
+
+  const { packages: matchPackages, loading: matchesLoading } = usePackages(
+    formData.destinationType ? (formData.destinationType as PackageType) : undefined
+  );
 
   type DestinationData = {
     key: string;
@@ -470,7 +461,6 @@ export function CustomPackagePage() {
     );
   };
 
-  const navigate = useNavigate();
   const totalSteps = 8;
 
   useEffect(() => {
@@ -533,106 +523,9 @@ export function CustomPackagePage() {
     }));
   };
 
-  const handleGenerateCustomPackage = () => {
+  const handleFindMatches = () => {
     if (!user) { setShowLoginModal(true); return; }
-    setItineraryLoading(true);
-    setItineraryError("");
-    setItineraryVariants(null);
-    setSelectedVariant(null);
-
-    fetch("/api/ai/itinerary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, destination: destinationLabel, lang: i18n.language }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.variants && data.variants.length > 0) {
-          setItineraryVariants(data.variants);
-        } else {
-          setItineraryError(data.error || "Kun tartibi yaratishda xato.");
-        }
-      })
-      .catch(() => setItineraryError("Serverga ulanishda xato."))
-      .finally(() => setItineraryLoading(false));
-  };
-
-  const handleSelectVariant = (variant: ItineraryVariant) => {
-    setSelectedVariant(variant);
-    setSelectedCompany(null);
-    setCompaniesLoading(true);
-    fetch("/api/companies")
-      .then((r) => r.json())
-      .then((data) => { if (data.companies) setCompanies(data.companies); })
-      .catch(() => {})
-      .finally(() => setCompaniesLoading(false));
-  };
-
-  const handleConfirmWithCompany = (company: TourCompany | null) => {
-    setSelectedCompany(company ?? { id: 0, name: "Firma tanlanmadi" });
-    const price = calculateCustomPrice({
-      days: formData.days,
-      travelers: formData.travelers,
-      budget: formData.budget,
-      hotelType: formData.hotelType,
-      transport: formData.transport,
-      destinationType: formData.destinationType,
-    });
-    const title = selectedVariant?.title || destinationLabel || t("customPackage.customTitle");
-    const nextBooking = {
-      id: Date.now(),
-      type: "custom" as const,
-      title,
-      price,
-      name: formData.name || "",
-      phone: formData.phone || "",
-      guests: formData.travelers,
-      bookedAt: new Date().toISOString(),
-      days: formData.days,
-      budget: formData.budget,
-      hotelType: formData.hotelType,
-      transport: formData.transport,
-      destinationType: formData.destinationType,
-      image: selectedDestination?.images[0] ?? PACKAGE_MEDIA["domestic-13"].cover,
-      companyName: company?.name ?? null,
-    };
-    const bookings = JSON.parse(localStorage.getItem("travelcraft_bookings") || "[]");
-    bookings.push(nextBooking);
-    localStorage.setItem("travelcraft_bookings", JSON.stringify(bookings));
-
-    // DB ga ham saqlash (admin panel ko'rishi uchun)
-    const tg = (window as any).Telegram?.WebApp;
-    const telegramId = tg?.initDataUnsafe?.user?.id?.toString() ?? null;
-    fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        type: "custom",
-        price,
-        name: formData.name || "",
-        phone: formData.phone || "",
-        guests: formData.travelers,
-        days: formData.days,
-        status: "pending",
-        telegram_id: telegramId,
-        company_id: company?.id && company.id > 0 ? company.id : null,
-      }),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          const saved = await res.json();
-          const fresh = JSON.parse(localStorage.getItem("travelcraft_bookings") || "[]");
-          const idx = fresh.findIndex((b: any) => b.id === nextBooking.id);
-          if (idx !== -1) {
-            fresh[idx] = { ...fresh[idx], dbId: saved.id, status: "pending" };
-            localStorage.setItem("travelcraft_bookings", JSON.stringify(fresh));
-          }
-        } else {
-          res.json().then((d: any) => console.error("[custom booking] DB xato:", d.error)).catch(() => {});
-        }
-      })
-      .catch((err) => console.error("[custom booking] tarmoq xatosi:", err));
+    setShowResults(true);
   };
 
   const handleNext = () => {
@@ -743,6 +636,85 @@ export function CustomPackagePage() {
     }
     return null;
   };
+
+  const interestOptions = [
+    { key: "historical", label: t("customPackage.interests.historical") },
+    { key: "nature", label: t("customPackage.interests.nature") },
+    { key: "beach", label: t("customPackage.interests.beach") },
+    { key: "culture", label: t("customPackage.interests.culture") },
+    { key: "food", label: t("customPackage.interests.food") },
+    { key: "shopping", label: t("customPackage.interests.shopping") },
+    { key: "photography", label: t("customPackage.interests.photography") },
+    { key: "family", label: t("customPackage.interests.family") },
+    { key: "nightlife", label: t("customPackage.interests.nightlife") },
+  ];
+
+  const CATEGORY_INTEREST_MAP: Record<string, string[]> = {
+    historical: ["historical", "pilgrimage"],
+    nature: ["nature", "adventure"],
+    beach: ["beach"],
+    culture: ["historical", "family"],
+    shopping: ["shopping"],
+    photography: ["nature", "historical"],
+    family: ["family"],
+    nightlife: ["luxury"],
+  };
+
+  const BUDGET_TIER_RANGE: Record<'budget' | 'mid-range' | 'luxury', [number, number]> = {
+    budget: [0, 500],
+    'mid-range': [500, 1500],
+    luxury: [1500, Infinity],
+  };
+
+  const parseDurationDays = (duration: string): number => {
+    const match = duration?.match(/\d+/);
+    return match ? Math.max(1, parseInt(match[0], 10)) : 1;
+  };
+
+  const scorePackage = (pkg: TravelPackage): number => {
+    let score = 0;
+
+    if (destinationLabel) {
+      const needle = destinationLabel.toLowerCase();
+      if (pkg.title.toLowerCase().includes(needle) || pkg.country?.toLowerCase().includes(needle)) {
+        score += 50;
+      }
+    }
+
+    const activeInterestKeys = interestOptions
+      .filter((opt) => formData.interests.includes(opt.label))
+      .map((opt) => opt.key);
+    if (activeInterestKeys.some((key) => CATEGORY_INTEREST_MAP[key]?.includes(pkg.category))) {
+      score += 20;
+    }
+
+    const budgetTier = getBudgetTier();
+    if (budgetTier) {
+      const [min, max] = BUDGET_TIER_RANGE[budgetTier];
+      const perDay = pkg.price / parseDurationDays(pkg.duration);
+      if (perDay >= min && perDay <= max) score += 15;
+    }
+
+    if (formData.hotelType) {
+      const starMatch = formData.hotelType.match(/\d/);
+      if (starMatch && pkg.hotel?.includes(starMatch[0])) score += 10;
+    }
+
+    if (formData.transport) {
+      const wantsFlight = /flight|samolyot|самол/i.test(formData.transport);
+      if (wantsFlight === !!pkg.flightIncluded) score += 10;
+    }
+
+    return score;
+  };
+
+  const sortedMatches = useMemo(() => {
+    return [...matchPackages].sort((a, b) => {
+      const diff = scorePackage(b) - scorePackage(a);
+      return diff !== 0 ? diff : b.rating - a.rating;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchPackages, formData, destinationLabel]);
 
   const getTransportIcon = (key: string, selected: boolean) => {
     const cls = `w-8 h-8 mb-3 mx-auto ${selected ? "text-white" : "text-blue-600"}`;
@@ -1386,18 +1358,6 @@ export function CustomPackagePage() {
       }
 
       case 7: {
-        const interestOptions = [
-          { key: "historical", label: t("customPackage.interests.historical") },
-          { key: "nature", label: t("customPackage.interests.nature") },
-          { key: "beach", label: t("customPackage.interests.beach") },
-          { key: "culture", label: t("customPackage.interests.culture") },
-          { key: "food", label: t("customPackage.interests.food") },
-          { key: "shopping", label: t("customPackage.interests.shopping") },
-          { key: "photography", label: t("customPackage.interests.photography") },
-          { key: "family", label: t("customPackage.interests.family") },
-          { key: "nightlife", label: t("customPackage.interests.nightlife") },
-        ];
-
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step7")}</h2>
@@ -1532,7 +1492,7 @@ export function CustomPackagePage() {
                     </span>
                   </div>
                   <div className="md:col-span-2 pt-2 border-t border-slate-100">
-                    <span className="text-slate-500">Taxminiy narx:</span>
+                    <span className="text-slate-500">Taxminiy byudjetingiz:</span>
                     <span className="ml-2 text-xl font-bold text-blue-600">
                       ${calculateCustomPrice({
                         days: formData.days,
@@ -1547,16 +1507,12 @@ export function CustomPackagePage() {
                 </div>
               </div>
 
-              {itineraryError && (
-                <p className="text-sm text-red-500 mb-3 text-center">{itineraryError}</p>
-              )}
               <button
-                onClick={handleGenerateCustomPackage}
-                disabled={itineraryLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white py-4 rounded-[1.5rem] hover:shadow-xl transition-all font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-60"
+                onClick={handleFindMatches}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white py-4 rounded-[1.5rem] hover:shadow-xl transition-all font-semibold text-lg flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
-                Kun tartibini yaratish
+                {t("customPackage.generate")}
               </button>
             </div>
           </div>
@@ -1567,289 +1523,45 @@ export function CustomPackagePage() {
     }
   };
 
-  const typeIcon = (type: string) => {
-    if (type === "food") return <Utensils className="w-4 h-4" />;
-    if (type === "hotel") return <BedDouble className="w-4 h-4" />;
-    if (type === "transport") return <Car className="w-4 h-4" />;
-    return <Navigation className="w-4 h-4" />;
-  };
-  const typeColor = (type: string) => {
-    if (type === "food") return "bg-orange-100 text-orange-600 border-orange-200";
-    if (type === "hotel") return "bg-purple-100 text-purple-600 border-purple-200";
-    if (type === "transport") return "bg-blue-100 text-blue-600 border-blue-200";
-    return "bg-emerald-100 text-emerald-600 border-emerald-200";
-  };
-
-  if (selectedVariant && !selectedCompany) {
+  if (showResults) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-10 px-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
-              <Building className="w-4 h-4" /> Tur firmani tanlang
+              <Building className="w-4 h-4" /> {t("customPackage.matchesLabel")}
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold">Qaysi tur firma bilan borasiz?</h1>
-            <p className="text-slate-500 mt-1">{selectedVariant.emoji} {selectedVariant.title} · {destinationLabel}</p>
+            <h1 className="text-2xl md:text-3xl font-bold">{t("customPackage.matchesTitle")}</h1>
+            <p className="text-slate-500 mt-1">{destinationLabel} · {formData.days} kun · {formData.travelers} kishi</p>
           </div>
 
-          {companiesLoading ? (
+          {matchesLoading ? (
             <div className="flex justify-center gap-1 py-12">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:0ms]" />
               <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:150ms]" />
               <span className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-bounce [animation-delay:300ms]" />
             </div>
+          ) : sortedMatches.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 bg-white rounded-[2rem] border border-slate-200 mb-8">
+              {t("customPackage.noMatches")}
+            </div>
           ) : (
-            <div className="space-y-4 mb-8">
-              {companies.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 bg-white rounded-[2rem] border border-slate-200">
-                  Hozircha tasdiqlangan tur firma yo'q
-                </div>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {companies.map((company) => (
-                    <motion.button
-                      key={company.id}
-                      onClick={() => handleConfirmWithCompany(company)}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      whileHover={{ y: -4 }}
-                      className="text-left bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all group"
-                    >
-                      <div className="flex items-start gap-4">
-                        {company.logo ? (
-                          <img src={company.logo} alt={company.name} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0 border border-slate-200" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center flex-shrink-0">
-                            <Building className="w-7 h-7 text-blue-500" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-slate-900 text-lg leading-snug mb-1">{company.name}</h3>
-                          {company.description && (
-                            <p className="text-slate-500 text-sm mb-2 line-clamp-2">{company.description}</p>
-                          )}
-                          <div className="space-y-1">
-                            {company.phone && (
-                              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                                <Phone className="w-3 h-3" /> {company.phone}
-                              </div>
-                            )}
-                            {company.address && (
-                              <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                                <MapPin className="w-3 h-3" /> {company.address}
-                              </div>
-                            )}
-                            {company.website && (
-                              <div className="flex items-center gap-1.5 text-xs text-blue-500">
-                                <Globe className="w-3 h-3" /> {company.website}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-center gap-1 text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
-                        Bu firmani tanlash <ArrowRight className="w-4 h-4" />
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              )}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {sortedMatches.map((pkg) => (
+                <PackageCard key={pkg.id} {...pkg} />
+              ))}
             </div>
           )}
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => handleConfirmWithCompany(null)}
-              className="flex-1 border border-slate-200 bg-white text-slate-600 py-4 rounded-2xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-            >
-              Firmasisiz davom etish
-            </button>
-            <button
-              onClick={() => setSelectedVariant(null)}
-              className="flex-1 border border-blue-200 bg-white text-blue-600 py-4 rounded-2xl font-semibold hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
-            >
-              <ArrowLeft className="w-5 h-5" /> Boshqa variant tanlash
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (selectedVariant && selectedCompany) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-10 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
-              <Sparkles className="w-4 h-4" /> {selectedVariant.emoji} {selectedVariant.theme}
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold">{selectedVariant.title}</h1>
-            <p className="text-slate-500 mt-1">{destinationLabel} · {formData.days} kun · {formData.travelers} kishi</p>
-          </div>
-
-          {selectedCompany.id !== 0 && (
-            <div className="bg-white rounded-[2rem] border border-blue-200 p-5 mb-6 shadow-sm flex items-center gap-4">
-              {selectedCompany.logo ? (
-                <img src={selectedCompany.logo} alt={selectedCompany.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-slate-200" />
-              ) : (
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center flex-shrink-0">
-                  <Building className="w-6 h-6 text-blue-500" />
-                </div>
-              )}
-              <div>
-                <p className="text-xs text-blue-500 font-semibold uppercase tracking-wide mb-0.5">Tanlangan Tur Firma</p>
-                <p className="font-bold text-slate-900">{selectedCompany.name}</p>
-                {selectedCompany.phone && <p className="text-xs text-slate-400 mt-0.5">{selectedCompany.phone}</p>}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-6 mb-8">
-            {selectedVariant.days.map((day: ItineraryDay) => (
-              <motion.div
-                key={day.day}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: day.day * 0.08 }}
-                className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden"
-              >
-                <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-                    {day.day}
-                  </div>
-                  <div>
-                    <div className="text-white/70 text-xs font-medium">{day.day}-kun</div>
-                    <div className="text-white font-bold">{day.title}</div>
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-3">
-                  {day.items.map((item: ItineraryItem, idx: number) => (
-                    <div key={idx} className="flex gap-4 items-start">
-                      <div className="flex flex-col items-center">
-                        <div className={`w-9 h-9 rounded-full border flex items-center justify-center flex-shrink-0 ${typeColor(item.type)}`}>
-                          {typeIcon(item.type)}
-                        </div>
-                        {idx < day.items.length - 1 && <div className="w-px h-6 bg-slate-100 mt-1" />}
-                      </div>
-                      <div className="flex-1 pb-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />{item.time}
-                          </span>
-                        </div>
-                        <div className="font-semibold text-slate-800">{item.place}</div>
-                        {item.dish && (
-                          <div className="text-sm text-orange-600 font-medium mt-0.5">🍽 {item.dish}</div>
-                        )}
-                        {item.note && (
-                          <div className="text-sm text-slate-500 mt-0.5">{item.note}</div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-500 text-white py-4 rounded-2xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-            >
-              <Check className="w-5 h-5" /> Dashboard'ga saqlash
-            </button>
-            <button
-              onClick={() => setSelectedCompany(null)}
-              className="flex-1 border border-blue-200 bg-white text-blue-600 py-4 rounded-2xl font-semibold hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
-            >
-              <ArrowLeft className="w-5 h-5" /> Firma o'zgartirish
-            </button>
-            <button
-              onClick={() => { setItineraryVariants(null); setSelectedVariant(null); setSelectedCompany(null); setPlanSelected(false); }}
-              className="flex-1 border border-slate-200 bg-white text-slate-700 py-4 rounded-2xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-            >
-              Yangi tur yaratish
-            </button>
-          </div>
-          <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} onSuccess={handleGenerateCustomPackage} />
-        </div>
-      </div>
-    );
-  }
-
-  if (itineraryVariants) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-10 px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
-              <Sparkles className="w-4 h-4" /> AI 6 ta Variant Tayyorladi
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold">O'zingizga yoqqan variantni tanlang</h1>
-            <p className="text-slate-500 mt-1">{destinationLabel} · {formData.days} kun · {formData.travelers} kishi</p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {itineraryVariants.map((variant, i) => (
-              <motion.button
-                key={variant.id}
-                onClick={() => handleSelectVariant(variant)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                whileHover={{ y: -4 }}
-                className="text-left bg-white rounded-[2rem] border border-slate-200 p-6 shadow-sm hover:shadow-xl transition-all group"
-              >
-                <div className="text-4xl mb-3">{variant.emoji}</div>
-                <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 text-xs font-semibold px-3 py-1 rounded-full mb-3">
-                  Variant {i + 1}
-                </div>
-                <h3 className="font-bold text-lg text-slate-900 mb-1 leading-snug">{variant.theme}</h3>
-                <p className="text-slate-500 text-sm mb-4 leading-relaxed">{variant.description}</p>
-                <div className="space-y-1">
-                  {variant.days[0]?.items.slice(0, 3).map((item: ItineraryItem, idx: number) => (
-                    <div key={idx} className="text-xs text-slate-400 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                      {item.place}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 flex items-center gap-1 text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
-                  Bu variantni tanlash <ArrowRight className="w-4 h-4" />
-                </div>
-              </motion.button>
-            ))}
-          </div>
 
           <div className="text-center">
             <button
-              onClick={() => { setItineraryVariants(null); setSelectedVariant(null); setSelectedCompany(null); setPlanSelected(false); }}
+              onClick={() => { setShowResults(false); setPlanSelected(false); setCurrentStep(1); }}
               className="inline-flex items-center gap-2 border border-slate-200 bg-white text-slate-600 px-6 py-3 rounded-2xl font-semibold hover:bg-slate-50 transition-all"
             >
-              <ArrowLeft className="w-4 h-4" /> Yangi tur yaratish
+              <ArrowLeft className="w-4 h-4" /> {t("customPackage.newSearch")}
             </button>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (itineraryLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 bg-white border border-slate-200 px-6 py-4 rounded-2xl shadow-lg mb-4">
-            <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
-            <span className="font-semibold text-slate-700">AI kun tartibini tayyorlamoqda...</span>
-          </div>
-          <div className="flex justify-center gap-1 mt-2">
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:0ms]" />
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:150ms]" />
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:300ms]" />
-          </div>
+          <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} onSuccess={handleFindMatches} />
         </div>
       </div>
     );
@@ -2009,7 +1721,7 @@ export function CustomPackagePage() {
             </button>
           ) : (
             <button
-              onClick={handleGenerateCustomPackage}
+              onClick={handleFindMatches}
               className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all w-full sm:w-auto"
             >
               <Sparkles className="w-5 h-5" />
@@ -2018,7 +1730,7 @@ export function CustomPackagePage() {
           )}
         </div>
       </div>
-      <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} onSuccess={handleGenerateCustomPackage} />
+      <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} onSuccess={handleFindMatches} />
     </div>
   );
 }

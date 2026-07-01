@@ -1,5 +1,39 @@
 require('dotenv').config();
+const bcrypt = require('bcryptjs');
 const pool = require('./db');
+
+const defaultTourCompanies = [
+  {
+    key: 'silkroad', name: 'Silk Road Travel', email: 'info@silkroadtravel.uz',
+    phone: '+998 71 200 10 01', address: 'Amir Temur ko\'chasi 15, Tashkent',
+    website: 'https://silkroadtravel.uz',
+    description: 'O\'zbekistonning tarixiy shaharlari bo\'ylab tur paketlari bilan ixtisoslashgan agentlik.',
+  },
+  {
+    key: 'oasis', name: 'Oasis Tours', email: 'contact@oasistours.uz',
+    phone: '+998 71 200 10 02', address: 'Bunyodkor shoh ko\'chasi 3, Tashkent',
+    website: 'https://oasistours.uz',
+    description: 'Tabiat va tog\' sayohatlari, dam olish maskanlari bo\'yicha tur operatori.',
+  },
+  {
+    key: 'nomad', name: 'Nomad Discovery', email: 'hello@nomaddiscovery.uz',
+    phone: '+998 71 200 10 03', address: 'Mustaqillik shoh ko\'chasi 45, Samarqand',
+    website: 'https://nomaddiscovery.uz',
+    description: 'Sarguzasht va cho\'l safarilariga ixtisoslashgan mahalliy tur firma.',
+  },
+  {
+    key: 'sunrise', name: 'Sunrise Holidays', email: 'info@sunriseholidays.com',
+    phone: '+998 71 200 10 04', address: 'Islom Karimov ko\'chasi 12, Tashkent',
+    website: 'https://sunriseholidays.com',
+    description: 'Xalqaro plyaj va hashamatli dam olish paketlari bo\'yicha yetakchi agentlik.',
+  },
+  {
+    key: 'heritage', name: 'Heritage Explorer', email: 'team@heritageexplorer.travel',
+    phone: '+998 71 200 10 05', address: 'Shota Rustaveli ko\'chasi 8, Tashkent',
+    website: 'https://heritageexplorer.travel',
+    description: 'Madaniy meros, ziyorat va oilaviy turlar bo\'yicha hamkor tur firma.',
+  },
+];
 
 const domesticPackages = [
   {
@@ -339,19 +373,44 @@ const internationalPackages = [
 
 const allPackages = [...domesticPackages, ...internationalPackages];
 
+async function seedTourCompanies(client) {
+  const companyIdByKey = {};
+  const placeholderHash = await bcrypt.hash('ChangeMe123!', 10);
+  for (const company of defaultTourCompanies) {
+    const { rows } = await client.query(
+      `INSERT INTO tour_companies (name, email, password_hash, phone, address, website, description, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'approved')
+       ON CONFLICT (email) DO UPDATE SET status = 'approved'
+       RETURNING id`,
+      [company.name, company.email, placeholderHash, company.phone, company.address, company.website, company.description]
+    );
+    companyIdByKey[company.key] = rows[0].id;
+  }
+  console.log(`Seeded ${defaultTourCompanies.length} default tour companies.`);
+  return companyIdByKey;
+}
+
 async function seed() {
   const client = await pool.connect();
   try {
+    const companyIdByKey = await seedTourCompanies(client);
+    const companyKeys = defaultTourCompanies.map((c) => c.key);
+
     // Clear existing packages
     await client.query('DELETE FROM packages');
     console.log('Existing packages cleared.');
 
+    let companyAssignIndex = 0;
     for (const pkg of allPackages) {
+      // The self-service "create your own package" placeholder isn't tied to a real tour firm
+      const companyKey = pkg.category === 'custom' ? null : companyKeys[companyAssignIndex++ % companyKeys.length];
+      const companyId = companyKey ? companyIdByKey[companyKey] : null;
+
       await client.query(
         `INSERT INTO packages
           (local_id, type, category, title, description, image, duration, price, rating,
-           included, country, hotel, flight_included, vibe, video, interests, partners, translations)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+           included, country, hotel, flight_included, vibe, video, interests, partners, translations, company_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
         [
           pkg.local_id,
           pkg.type,
@@ -371,6 +430,7 @@ async function seed() {
           pkg.interests || null,
           pkg.partners || null,
           JSON.stringify(pkg.translations || {}),
+          companyId,
         ]
       );
     }

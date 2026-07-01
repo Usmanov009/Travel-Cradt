@@ -16,7 +16,7 @@ try { ({ createBot, getTelegramUser } = require('./bot')); } catch (e) { console
 const { getPackages, createPackage, getPackageById } = require('./controllers/packagesController');
 const { getBookings, createBooking, updateBooking } = require('./controllers/bookingsController');
 const { enrichCountry } = require('./controllers/enrichController');
-const { getAiRecommendation, chatWithAi, getDestinationInfo, getItinerary } = require('./controllers/aiController');
+const { getAiRecommendation, chatWithAi, getDestinationInfo } = require('./controllers/aiController');
 const { geocodePlace } = require('./controllers/placesController');
 
 const app = express();
@@ -48,7 +48,6 @@ app.get('/api/places/geocode', geocodePlace);
 app.post('/api/ai/recommend', getAiRecommendation);
 app.post('/api/ai/chat', chatWithAi);
 app.post('/api/ai/destination-info', getDestinationInfo);
-app.post('/api/ai/itinerary', getItinerary);
 
 app.get('/api/packages', getPackages);
 app.get('/api/packages/:id', getPackageById);

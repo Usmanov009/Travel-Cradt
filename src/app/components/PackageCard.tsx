@@ -19,6 +19,7 @@ interface PackageCardProps {
   country?: string;
   hotel?: string;
   flightIncluded?: boolean;
+  companyName?: string;
   translations?: {
     uz?: { title?: string; description?: string; duration?: string };
     ru?: { title?: string; description?: string; duration?: string };
@@ -38,6 +39,7 @@ export function PackageCard({
   country,
   hotel,
   flightIncluded,
+  companyName,
   translations,
 }: PackageCardProps) {
   const { t, i18n } = useTranslation();
@@ -90,6 +92,13 @@ export function PackageCard({
             <span className="font-semibold text-slate-900">{rating}</span>
           </div>
         </div>
+        {companyName && (
+          <div className="absolute top-4 left-4">
+            <div className="bg-blue-600/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-white">
+              {companyName}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="p-4 sm:p-5 md:p-6 text-white">
