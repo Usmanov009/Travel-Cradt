@@ -124,80 +124,53 @@ async function getItinerary(req, res) {
   const client = getClient();
   if (!client) return res.status(503).json({ error: 'AI service not configured' });
 
-  const { destination, destinationType, days, travelers, budget, hotelType, transport, interests, startDate, lang, selectedTheme } = req.body;
+  const { destination, days, travelers, budget, hotelType, transport, interests, startDate, lang, selectedTheme } = req.body;
   if (!destination || !days) return res.status(400).json({ error: 'destination and days required' });
 
   const langNote = lang === 'uz' ? "O'zbek tilida yoz" : lang === 'ru' ? 'Пиши на русском' : 'Write in English';
   const interestsList = Array.isArray(interests) && interests.length ? interests.join(', ') : 'general tourism';
+  const limitedDays = Math.min(parseInt(days) || 3, 5);
 
-  const prompt = `You are a professional travel planner. Create 6 itinerary variants for ${travelers || 2} travelers visiting ${destination} for ${days} days.
+  const prompt = `You are a travel planner. Create 4 different itinerary variants for ${travelers || 2} travelers visiting ${destination} for ${limitedDays} days.
 Budget: ${budget || 'mid-range'}. Hotel: ${hotelType || 'standard'}. Transport: ${transport || 'mixed'}.
-User interests: ${interestsList}.
-${startDate ? `Trip starts: ${startDate}.` : ''}
-${selectedTheme ? `Focus on theme: "${selectedTheme}".` : ''}
-
+Interests: ${interestsList}.${startDate ? ` Starts: ${startDate}.` : ''}${selectedTheme ? ` Theme: "${selectedTheme}".` : ''}
 ${langNote}.
 
-IMPORTANT RULES ABOUT VARIANTS:
-- ALL 6 variants must be built around the user's stated interests: "${interestsList}"
-- Do NOT invent unrelated themes (no "Adventure" if user chose "Food & History")
-- Variants must share the same interest focus but differ ONLY in:
-  1. Which specific places/sites are visited (different spots each variant)
-  2. Time schedule (different start times, different order of places)
-  3. Which restaurants and dishes are chosen
-  4. Pacing (some slower/relaxed, some packed/energetic)
-- Think of it as 6 different routes through the same city for the same type of traveler
-
-Return ONLY valid JSON, no markdown, no extra text:
-{
-  "variants": [
-    {
-      "id": 1,
-      "theme": "short label describing this specific route (max 4 words)",
-      "emoji": "🏛️",
-      "description": "1 sentence: what specific places make this route unique",
-      "title": "trip title max 8 words",
-      "days": [
-        {
-          "day": 1,
-          "title": "day title",
-          "items": [
-            { "time": "09:00", "type": "visit", "place": "specific place name", "note": "1 sentence" },
-            { "time": "12:30", "type": "food", "place": "restaurant name", "dish": "dish name" },
-            { "time": "14:00", "type": "visit", "place": "specific place name", "note": "1 sentence" },
-            { "time": "19:00", "type": "food", "place": "restaurant name", "dish": "dish name" }
-          ]
-        }
-      ]
-    }
-  ]
-}
+Return ONLY this JSON (no markdown, no extra text):
+{"variants":[{"id":1,"theme":"4 word label","emoji":"🏛️","description":"1 sentence","title":"trip title max 6 words","days":[{"day":1,"title":"day title","items":[{"time":"09:00","type":"visit","place":"place name","note":"brief note"},{"time":"12:30","type":"food","place":"restaurant","dish":"dish"},{"time":"14:30","type":"visit","place":"place name","note":"brief note"},{"time":"19:00","type":"food","place":"restaurant","dish":"dish"}]}]}]}
 
 Rules:
-- Generate EXACTLY 6 variant objects
-- All variants must reflect interests: ${interestsList}
-- Each day must have 4-5 items alternating visits and meals
-- type must be one of: "visit", "food", "hotel", "transport"
-- Times must be realistic (morning start ~08:00–10:00, last item ~19:00–21:00)
-- Each variant must have exactly ${days} day objects
-- Use real, specific place names and local restaurants with actual dishes`;
+- Exactly 4 variants, each variant has exactly ${limitedDays} day(s)
+- Each day has exactly 4 items (2 visits + 2 meals)
+- type: "visit" or "food" only
+- Real specific place names`;
 
   try {
     const completion = await client.chat.completions.create({
       model: MODEL,
       messages: [
-        { role: 'system', content: 'You are a travel itinerary expert. Always respond with valid JSON only, no markdown, no code blocks.' },
+        { role: 'system', content: 'Return valid JSON only. No markdown. No code blocks. No explanation.' },
         { role: 'user', content: prompt },
       ],
-      max_tokens: 8000,
-      temperature: 0.8,
+      max_tokens: 4000,
+      temperature: 0.7,
     });
-    const text = completion.choices[0].message.content.trim().replace(/^```json\n?/, '').replace(/^```\n?/, '').replace(/\n?```$/, '');
-    const result = JSON.parse(text);
+
+    let text = completion.choices[0].message.content.trim();
+    // JSON ni ajratib olish (markdown yoki qo'shimcha matn bo'lsa ham ishlaydi)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    const result = JSON.parse(jsonMatch[0]);
+    if (!result.variants || !Array.isArray(result.variants)) throw new Error('Invalid response structure');
     res.json(result);
   } catch (err) {
-    console.error('Groq itinerary error:', err.status, err.message);
-    res.status(500).json({ error: 'Failed to generate itinerary' });
+    console.error('Groq itinerary error:', err.status || '', err.message);
+    const isRateLimit = err.status === 429 || (err.message && err.message.includes('rate'));
+    res.status(500).json({
+      error: isRateLimit
+        ? 'AI band, biroz kutib qayta urining'
+        : 'Failed to generate itinerary',
+    });
   }
 }
 
