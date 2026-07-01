@@ -77,7 +77,12 @@ export function PackageDetailPage() {
 
   const handleBooking = async () => {
     if (!packageData) return;
-    if (!user) { setShowLoginModal(true); return; }
+
+    // Telegram WebApp foydalanuvchilari login talab qilmaydi
+    const tg = (window as any).Telegram?.WebApp;
+    const telegramId = tg?.initDataUnsafe?.user?.id?.toString() ?? null;
+    if (!user && !telegramId) { setShowLoginModal(true); return; }
+
     if (!name.trim() || !phone.trim()) {
       setMessage(t("detail.enterNamePhone"));
       return;
@@ -114,8 +119,6 @@ export function PackageDetailPage() {
 
     // NeonDB ga ham saqlash (admin panel ko'rishi uchun)
     try {
-      const tg = (window as any).Telegram?.WebApp;
-      const telegramId = tg?.initDataUnsafe?.user?.id?.toString() ?? null;
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,8 +145,13 @@ export function PackageDetailPage() {
           fresh[idx] = { ...fresh[idx], dbId: saved.id, status: "pending" };
           localStorage.setItem("travelcraft_bookings", JSON.stringify(fresh));
         }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error("[booking] DB saqlashda xato:", errData.error || res.status);
       }
-    } catch {}
+    } catch (err) {
+      console.error("[booking] tarmoq xatosi:", err);
+    }
 
     setTimeout(() => {
       navigate("/dashboard");

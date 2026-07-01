@@ -29,48 +29,62 @@ function notifyTelegram(telegramId, text) {
 
 async function getBookings(req, res) {
   try {
-    const { status } = req.query;
-    const limit = parseInt(req.query.limit) || 50;
+    const status = req.query.status || null;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
     const offset = parseInt(req.query.offset) || 0;
-    const isCompanyAdmin = req.user.role === 'admin' && req.user.company_id;
+    const isCompanyAdmin = req.user.role === 'admin' && !!req.user.company_id;
 
-    let rows, total;
+    let bookings, total;
 
     if (isCompanyAdmin) {
       // Tur firma admini: faqat o'z kompaniyasiga tegishli bronlar
-      const filterParams = [req.user.company_id];
-      let extraWhere = '';
-      if (status) {
-        filterParams.push(status);
-        extraWhere = ` AND b.status = $${filterParams.length}`;
-      }
-      const where = `WHERE b.title IN (SELECT p.title FROM packages p WHERE p.company_id = $1)${extraWhere}`;
+      const pkgRes = await pool.query(
+        'SELECT DISTINCT title FROM packages WHERE company_id = $1',
+        [req.user.company_id]
+      );
+      const titles = pkgRes.rows.map(r => r.title);
+      if (titles.length === 0) return res.json({ bookings: [], total: 0 });
 
-      ({ rows } = await pool.query(
-        `SELECT b.* FROM bookings b ${where} ORDER BY b.booked_at DESC LIMIT $${filterParams.length + 1} OFFSET $${filterParams.length + 2}`,
-        [...filterParams, limit, offset]
-      ));
-      ({ rows: [{ count: total }] } = await pool.query(
-        `SELECT COUNT(*) FROM bookings b ${where}`,
-        filterParams
-      ));
+      const inList = titles.map((_, i) => `$${i + 1}`).join(', ');
+      const params = [...titles];
+      let extraWhere = '';
+      if (status) { params.push(status); extraWhere = ` AND status = $${params.length}`; }
+
+      const cntRes = await pool.query(
+        `SELECT COUNT(*) FROM bookings WHERE title IN (${inList})${extraWhere}`, params
+      );
+      total = parseInt(cntRes.rows[0].count);
+
+      const limitIdx = params.length + 1;
+      const offsetIdx = params.length + 2;
+      params.push(limit, offset);
+      const dataRes = await pool.query(
+        `SELECT * FROM bookings WHERE title IN (${inList})${extraWhere} ORDER BY booked_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+        params
+      );
+      bookings = dataRes.rows;
     } else {
       // Super admin: barcha bronlar
-      const filterParams = [];
-      const where = status ? `WHERE status = $1` : '';
-      if (status) filterParams.push(status);
-
-      ({ rows } = await pool.query(
-        `SELECT * FROM bookings ${where} ORDER BY booked_at DESC LIMIT $${filterParams.length + 1} OFFSET $${filterParams.length + 2}`,
-        [...filterParams, limit, offset]
-      ));
-      ({ rows: [{ count: total }] } = await pool.query(
-        `SELECT COUNT(*) FROM bookings ${where}`,
-        filterParams
-      ));
+      if (status) {
+        const cntRes = await pool.query('SELECT COUNT(*) FROM bookings WHERE status = $1', [status]);
+        total = parseInt(cntRes.rows[0].count);
+        const dataRes = await pool.query(
+          'SELECT * FROM bookings WHERE status = $1 ORDER BY booked_at DESC LIMIT $2 OFFSET $3',
+          [status, limit, offset]
+        );
+        bookings = dataRes.rows;
+      } else {
+        const cntRes = await pool.query('SELECT COUNT(*) FROM bookings');
+        total = parseInt(cntRes.rows[0].count);
+        const dataRes = await pool.query(
+          'SELECT * FROM bookings ORDER BY booked_at DESC LIMIT $1 OFFSET $2',
+          [limit, offset]
+        );
+        bookings = dataRes.rows;
+      }
     }
 
-    return res.json({ bookings: rows, total: parseInt(total) });
+    return res.json({ bookings, total });
   } catch (err) {
     console.error('[getBookings] error:', err);
     return res.status(500).json({ error: err.message || 'Server error' });

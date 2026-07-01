@@ -578,10 +578,11 @@ export function CustomPackagePage() {
       transport: formData.transport,
       destinationType: formData.destinationType,
     });
+    const title = selectedVariant?.title || destinationLabel || t("customPackage.customTitle");
     const nextBooking = {
       id: Date.now(),
       type: "custom" as const,
-      title: selectedVariant?.title || destinationLabel || t("customPackage.customTitle"),
+      title,
       price,
       name: formData.name || "",
       phone: formData.phone || "",
@@ -598,6 +599,39 @@ export function CustomPackagePage() {
     const bookings = JSON.parse(localStorage.getItem("travelcraft_bookings") || "[]");
     bookings.push(nextBooking);
     localStorage.setItem("travelcraft_bookings", JSON.stringify(bookings));
+
+    // DB ga ham saqlash (admin panel ko'rishi uchun)
+    const tg = (window as any).Telegram?.WebApp;
+    const telegramId = tg?.initDataUnsafe?.user?.id?.toString() ?? null;
+    fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        type: "custom",
+        price,
+        name: formData.name || "",
+        phone: formData.phone || "",
+        guests: formData.travelers,
+        days: formData.days,
+        status: "pending",
+        telegram_id: telegramId,
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const saved = await res.json();
+          const fresh = JSON.parse(localStorage.getItem("travelcraft_bookings") || "[]");
+          const idx = fresh.findIndex((b: any) => b.id === nextBooking.id);
+          if (idx !== -1) {
+            fresh[idx] = { ...fresh[idx], dbId: saved.id, status: "pending" };
+            localStorage.setItem("travelcraft_bookings", JSON.stringify(fresh));
+          }
+        } else {
+          res.json().then((d: any) => console.error("[custom booking] DB xato:", d.error)).catch(() => {});
+        }
+      })
+      .catch((err) => console.error("[custom booking] tarmoq xatosi:", err));
   };
 
   const handleNext = () => {
