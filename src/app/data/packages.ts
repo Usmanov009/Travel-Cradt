@@ -21,6 +21,9 @@ export interface TravelPackage {
   interests?: string[];
   partners?: string[];
   images?: string[];
+  companyId?: number;
+  companyName?: string;
+  companyLogo?: string;
   translations?: {
     uz?: { title?: string; description?: string; vibe?: string; duration?: string };
     ru?: { title?: string; description?: string; vibe?: string; duration?: string };

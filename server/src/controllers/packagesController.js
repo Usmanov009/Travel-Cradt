@@ -3,10 +3,14 @@ const pool = require('../db');
 async function getPackages(req, res) {
   try {
     const { type } = req.query;
-    let query = 'SELECT * FROM packages ORDER BY created_at DESC LIMIT 200';
+    let query = `SELECT p.*, tc.name AS company_name, tc.logo AS company_logo
+                 FROM packages p LEFT JOIN tour_companies tc ON p.company_id = tc.id
+                 ORDER BY p.created_at DESC LIMIT 200`;
     const params = [];
     if (type) {
-      query = 'SELECT * FROM packages WHERE type = $1 ORDER BY created_at DESC LIMIT 200';
+      query = `SELECT p.*, tc.name AS company_name, tc.logo AS company_logo
+               FROM packages p LEFT JOIN tour_companies tc ON p.company_id = tc.id
+               WHERE p.type = $1 ORDER BY p.created_at DESC LIMIT 200`;
       params.push(type);
     }
     const { rows } = await pool.query(query, params);
@@ -18,7 +22,12 @@ async function getPackages(req, res) {
 
 async function getPackageById(req, res) {
   try {
-    const { rows } = await pool.query('SELECT * FROM packages WHERE id = $1', [req.params.id]);
+    const { rows } = await pool.query(
+      `SELECT p.*, tc.name AS company_name, tc.logo AS company_logo
+       FROM packages p LEFT JOIN tour_companies tc ON p.company_id = tc.id
+       WHERE p.id = $1`,
+      [req.params.id]
+    );
     if (!rows.length) return res.status(404).json({ error: 'Package not found' });
     return res.json(rows[0]);
   } catch (err) {
