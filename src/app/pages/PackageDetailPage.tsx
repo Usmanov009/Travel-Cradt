@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, CheckCircle2, ArrowLeft, Star } from "lucide-react";
+import { CalendarDays, CheckCircle2, ArrowLeft, Star, Building2 } from "lucide-react";
 import type { TravelPackage } from "../data/packages";
 import { getPackageImages } from "../data/packageMedia";
 import { mapDbPackage } from "../hooks/usePackages";
@@ -215,6 +215,12 @@ export function PackageDetailPage() {
                   {packageData.type === "domestic" ? t("detail.domestic") : t("detail.international")} {t("detail.packageLabel")}
                 </p>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 leading-tight">{localTitle}</h1>
+                {packageData.companyName && (
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+                    <Building2 className="w-4 h-4" />
+                    {packageData.companyName}
+                  </div>
+                )}
               </div>
               <div className="sm:text-right shrink-0">
                 <p className="text-sm text-slate-500">{t("detail.from")}</p>
