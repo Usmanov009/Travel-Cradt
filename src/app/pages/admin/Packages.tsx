@@ -9,8 +9,9 @@ const emptyForm = {
 };
 
 export default function AdminPackages() {
-  const { token } = useContext(AdminAuthContext);
+  const { token, isSuperAdmin } = useContext(AdminAuthContext);
   const [packages, setPackages] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editPkg, setEditPkg] = useState<any>(null);
@@ -18,6 +19,7 @@ export default function AdminPackages() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [assigningId, setAssigningId] = useState<number | null>(null);
 
   const load = () => {
     if (!token) return;
@@ -29,6 +31,29 @@ export default function AdminPackages() {
   };
 
   useEffect(() => { load(); }, [token]);
+
+  useEffect(() => {
+    if (!isSuperAdmin || !token) return;
+    adminFetch('/admin-accounts', token)
+      .then(r => r.json())
+      .then(d => setCompanies(d.admins || []))
+      .catch(() => {});
+  }, [isSuperAdmin, token]);
+
+  const assignCompany = async (pkgId: number, companyId: string) => {
+    setAssigningId(pkgId);
+    try {
+      await adminFetch(`/packages/${pkgId}/company`, token!, {
+        method: 'PATCH',
+        body: JSON.stringify({ company_id: companyId ? parseInt(companyId) : null }),
+      });
+      load();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setAssigningId(null);
+    }
+  };
 
   const openCreate = () => {
     setEditPkg(null);
@@ -153,7 +178,25 @@ export default function AdminPackages() {
                   </td>
                   <td className="px-4 py-3 text-gray-600">{pkg.country || '—'}</td>
                   <td className="px-4 py-3 font-semibold">${pkg.price}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{pkg.company_name || 'TravelCraft'}</td>
+                  <td className="px-4 py-3 text-xs">
+                    {isSuperAdmin ? (
+                      <select
+                        value={pkg.company_id ?? ''}
+                        disabled={assigningId === pkg.id}
+                        onChange={e => assignCompany(pkg.id, e.target.value)}
+                        className="border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+                      >
+                        <option value="">TravelCraft</option>
+                        {companies.map((c: any) => (
+                          <option key={c.company_id} value={c.company_id}>
+                            {c.company_name || c.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-gray-500">{pkg.company_name || 'TravelCraft'}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button

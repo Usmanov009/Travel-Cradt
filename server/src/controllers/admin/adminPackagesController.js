@@ -120,4 +120,31 @@ async function deletePackage(req, res) {
   }
 }
 
-module.exports = { getPackages, createPackage, updatePackage, deletePackage };
+// Super admin: paketni firmaga biriktirish yoki ajratish
+async function assignPackageCompany(req, res) {
+  try {
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Faqat super admin' });
+    }
+    const { id } = req.params;
+    const { company_id } = req.body; // null bo'lsa ajratiladi
+    const newCompanyId = company_id || null;
+
+    const pkgRes = await pool.query('UPDATE packages SET company_id = $1 WHERE id = $2 RETURNING title', [newCompanyId, id]);
+    if (!pkgRes.rows.length) return res.status(404).json({ error: 'Package not found' });
+
+    const pkgTitle = pkgRes.rows[0].title;
+    // Shu paketga tegishli bronlarni ham yangilash
+    await pool.query(
+      'UPDATE bookings SET company_id = $1 WHERE title = $2',
+      [newCompanyId, pkgTitle]
+    ).catch(() => {});
+
+    return res.json({ updated: true });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+}
+
+module.exports = { getPackages, createPackage, updatePackage, deletePackage, assignPackageCompany };

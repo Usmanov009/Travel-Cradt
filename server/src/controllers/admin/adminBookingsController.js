@@ -37,26 +37,31 @@ async function getBookings(req, res) {
     let bookings, total;
 
     if (isCompanyAdmin) {
-      // Tur firma admini: company_id bo'yicha to'g'ridan-to'g'ri filtrlash
+      // Tur firma admini: company_id YOKI paket nomi orqali moslashtirish
+      const baseWhere = `(b.company_id = $1 OR b.title IN (
+        SELECT p.title FROM packages p WHERE p.company_id = $1
+      ))`;
       if (status) {
         const cntRes = await pool.query(
-          'SELECT COUNT(*) FROM bookings WHERE company_id = $1 AND status = $2',
+          `SELECT COUNT(DISTINCT b.id) FROM bookings b WHERE ${baseWhere} AND b.status = $2`,
           [req.user.company_id, status]
         );
         total = parseInt(cntRes.rows[0].count);
         const dataRes = await pool.query(
-          'SELECT * FROM bookings WHERE company_id = $1 AND status = $2 ORDER BY booked_at DESC LIMIT $3 OFFSET $4',
+          `SELECT DISTINCT b.* FROM bookings b WHERE ${baseWhere} AND b.status = $2
+           ORDER BY b.booked_at DESC LIMIT $3 OFFSET $4`,
           [req.user.company_id, status, limit, offset]
         );
         bookings = dataRes.rows;
       } else {
         const cntRes = await pool.query(
-          'SELECT COUNT(*) FROM bookings WHERE company_id = $1',
+          `SELECT COUNT(DISTINCT b.id) FROM bookings b WHERE ${baseWhere}`,
           [req.user.company_id]
         );
         total = parseInt(cntRes.rows[0].count);
         const dataRes = await pool.query(
-          'SELECT * FROM bookings WHERE company_id = $1 ORDER BY booked_at DESC LIMIT $2 OFFSET $3',
+          `SELECT DISTINCT b.* FROM bookings b WHERE ${baseWhere}
+           ORDER BY b.booked_at DESC LIMIT $2 OFFSET $3`,
           [req.user.company_id, limit, offset]
         );
         bookings = dataRes.rows;
