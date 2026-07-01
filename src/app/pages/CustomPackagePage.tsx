@@ -616,6 +616,7 @@ export function CustomPackagePage() {
         days: formData.days,
         status: "pending",
         telegram_id: telegramId,
+        company_id: company?.id && company.id > 0 ? company.id : null,
       }),
     })
       .then(async (res) => {

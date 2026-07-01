@@ -13,8 +13,8 @@ async function getBookings(req, res) {
 
 async function createBooking(req, res) {
   try {
-    const { title, type, price, name, phone, guests, days, status, telegram_id, travel_date } = req.body;
-    console.log('[createBooking]', { title, name, phone, guests, days, status, telegram_id: telegram_id ? '✓' : null });
+    const { title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id } = req.body;
+    console.log('[createBooking]', { title, name, phone, guests, status, company_id: company_id ?? null });
 
     let resolvedTelegramId = telegram_id || null;
     try {
@@ -28,10 +28,10 @@ async function createBooking(req, res) {
       }
     } catch {}
 
-    // Paket company_id sini aniqlash
-    let companyId = null;
+    // company_id: avval bodydan, yo'q bo'lsa paket nomi orqali topamiz
+    let companyId = company_id || null;
     try {
-      if (title) {
+      if (!companyId && title) {
         const pkgRow = await pool.query(
           'SELECT company_id FROM packages WHERE title = $1 AND company_id IS NOT NULL LIMIT 1',
           [title]

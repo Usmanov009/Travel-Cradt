@@ -168,4 +168,23 @@ async function updateBooking(req, res) {
   }
 }
 
-module.exports = { getBookings, updateBooking };
+// Super admin: bronni firmaga biriktirish
+async function assignBookingCompany(req, res) {
+  try {
+    if (req.user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'Faqat super admin' });
+    }
+    const { id } = req.params;
+    const { company_id } = req.body;
+    const { rows } = await pool.query(
+      'UPDATE bookings SET company_id = $1 WHERE id = $2 RETURNING id',
+      [company_id || null, id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Booking not found' });
+    return res.json({ updated: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { getBookings, updateBooking, assignBookingCompany };

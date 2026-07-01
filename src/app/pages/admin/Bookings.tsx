@@ -14,8 +14,9 @@ const statusColor: Record<string, string> = {
 };
 
 export default function AdminBookings() {
-  const { token } = useContext(AdminAuthContext);
+  const { token, isSuperAdmin } = useContext(AdminAuthContext);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -42,6 +43,24 @@ export default function AdminBookings() {
   };
 
   useEffect(() => { load(filter); }, [token, filter]);
+
+  useEffect(() => {
+    if (!isSuperAdmin || !token) return;
+    adminFetch('/admin-accounts', token)
+      .then(r => r.json())
+      .then(d => setCompanies(d.admins || []))
+      .catch(() => {});
+  }, [isSuperAdmin, token]);
+
+  const assignCompany = async (bookingId: number, companyId: string) => {
+    try {
+      await adminFetch(`/bookings/${bookingId}/company`, token!, {
+        method: 'PATCH',
+        body: JSON.stringify({ company_id: companyId ? parseInt(companyId) : null }),
+      });
+      load(filter);
+    } catch {}
+  };
 
   const updateStatus = async (id: number, status: string) => {
     setUpdating(id);
@@ -117,6 +136,7 @@ export default function AdminBookings() {
                 <th className="px-4 py-3">Telefon</th>
                 <th className="px-4 py-3">Mehmonlar</th>
                 <th className="px-4 py-3">Narx</th>
+                {isSuperAdmin && <th className="px-4 py-3">Firma</th>}
                 <th className="px-4 py-3">Holat</th>
                 <th className="px-4 py-3">Sana</th>
                 <th className="px-4 py-3">Amallar</th>
@@ -132,6 +152,22 @@ export default function AdminBookings() {
                   <td className="px-4 py-3 text-gray-600">{b.phone || '—'}</td>
                   <td className="px-4 py-3 text-center">{b.guests || 1}</td>
                   <td className="px-4 py-3 font-semibold">${b.price || 0}</td>
+                  {isSuperAdmin && (
+                    <td className="px-4 py-3">
+                      <select
+                        value={b.company_id ?? ''}
+                        onChange={e => assignCompany(b.id, e.target.value)}
+                        className="border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      >
+                        <option value="">—</option>
+                        {companies.map((c: any) => (
+                          <option key={c.company_id} value={c.company_id}>
+                            {c.company_name || c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[b.status]}`}>
                       {statusLabel[b.status]}
@@ -171,7 +207,7 @@ export default function AdminBookings() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Bronlar topilmadi</td></tr>
+                <tr><td colSpan={isSuperAdmin ? 8 : 7} className="px-4 py-8 text-center text-gray-400">Bronlar topilmadi</td></tr>
               )}
             </tbody>
           </table>
