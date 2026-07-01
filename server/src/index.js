@@ -64,6 +64,25 @@ app.get('/api/companies', async (req, res) => {
   }
 });
 
+app.get('/api/companies/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, name, phone, address, website, description, logo
+       FROM tour_companies WHERE id = $1 AND status = 'approved'`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Company not found' });
+
+    const { rows: packages } = await pool.query(
+      `SELECT id, type, title, image, price FROM packages WHERE company_id = $1 ORDER BY created_at DESC LIMIT 12`,
+      [req.params.id]
+    );
+    return res.json({ ...rows[0], packages });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/bookings', getBookings);
 app.post('/api/bookings', createBooking);
 app.put('/api/bookings/:id', updateBooking);

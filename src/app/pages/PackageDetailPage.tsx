@@ -9,6 +9,7 @@ import { getAppLang } from "../utils/locale";
 import { PackageImage } from "../components/PackageImage";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginModal } from "../components/LoginModal";
+import { CompanyInfoModal } from "../components/CompanyInfoModal";
 import { DestinationMap } from "../components/DestinationMap";
 import { calculatePackagePrice } from "../utils/pricing";
 import type { StoredBooking } from "../utils/pricing";
@@ -20,6 +21,7 @@ export function PackageDetailPage() {
   const lang = getAppLang(i18n.language);
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [packageData, setPackageData] = useState<TravelPackage | null>(null);
   const [pkgLoading, setPkgLoading] = useState(true);
@@ -216,10 +218,13 @@ export function PackageDetailPage() {
                 </p>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 leading-tight">{localTitle}</h1>
                 {packageData.companyName && (
-                  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">
+                  <button
+                    onClick={() => setShowCompanyModal(true)}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                  >
                     <Building2 className="w-4 h-4" />
                     {packageData.companyName}
-                  </div>
+                  </button>
                 )}
               </div>
               <div className="sm:text-right shrink-0">
@@ -410,6 +415,11 @@ export function PackageDetailPage() {
         open={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onSuccess={handleBooking}
+      />
+      <CompanyInfoModal
+        companyId={packageData.companyId ?? null}
+        open={showCompanyModal}
+        onClose={() => setShowCompanyModal(false)}
       />
     </div>
   );

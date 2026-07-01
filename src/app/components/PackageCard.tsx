@@ -5,6 +5,7 @@ import { Star, Clock, Heart, Share2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { getAppLang } from "../utils/locale";
 import { PackageImage } from "./PackageImage";
+import { CompanyInfoModal } from "./CompanyInfoModal";
 
 interface PackageCardProps {
   id: number;
@@ -19,6 +20,7 @@ interface PackageCardProps {
   country?: string;
   hotel?: string;
   flightIncluded?: boolean;
+  companyId?: number;
   companyName?: string;
   translations?: {
     uz?: { title?: string; description?: string; duration?: string };
@@ -39,6 +41,7 @@ export function PackageCard({
   country,
   hotel,
   flightIncluded,
+  companyId,
   companyName,
   translations,
 }: PackageCardProps) {
@@ -48,10 +51,12 @@ export function PackageCard({
   const localDescription = translations?.[lang]?.description || description;
   const localDuration = translations?.[lang]?.duration || duration;
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
 
   const navigate = useNavigate();
 
   return (
+    <>
     <motion.div
       onClick={() => navigate(`/package/${type}/${id}`)}
       initial={{ opacity: 0, y: 20 }}
@@ -94,9 +99,15 @@ export function PackageCard({
         </div>
         {companyName && (
           <div className="absolute top-4 left-4">
-            <div className="bg-blue-600/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-white">
+            <button
+              onClick={(event) => {
+                event.stopPropagation();
+                setShowCompanyModal(true);
+              }}
+              className="bg-blue-600/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
               {companyName}
-            </div>
+            </button>
           </div>
         )}
       </div>
@@ -168,5 +179,13 @@ export function PackageCard({
         </div>
       </div>
     </motion.div>
+    {companyId && (
+      <CompanyInfoModal
+        companyId={companyId}
+        open={showCompanyModal}
+        onClose={() => setShowCompanyModal(false)}
+      />
+    )}
+    </>
   );
 }
