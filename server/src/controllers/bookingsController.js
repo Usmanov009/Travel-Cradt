@@ -28,14 +28,26 @@ async function createBooking(req, res) {
       }
     } catch {}
 
+    // Paket company_id sini aniqlash
+    let companyId = null;
+    try {
+      if (title) {
+        const pkgRow = await pool.query(
+          'SELECT company_id FROM packages WHERE title = $1 AND company_id IS NOT NULL LIMIT 1',
+          [title]
+        );
+        if (pkgRow.rows.length > 0) companyId = pkgRow.rows[0].company_id;
+      }
+    } catch {}
+
     try {
       const { rows } = await pool.query(
-        `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
          RETURNING *`,
-        [title, type, price, name, phone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null]
+        [title, type, price, name, phone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId]
       );
-      console.log('[createBooking] saved id:', rows[0].id);
+      console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId);
       return res.status(201).json(rows[0]);
     } catch (insertErr) {
       console.warn('[createBooking] full insert failed:', insertErr.message, '— trying fallback');

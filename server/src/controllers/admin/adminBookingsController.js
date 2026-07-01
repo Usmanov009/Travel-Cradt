@@ -37,32 +37,30 @@ async function getBookings(req, res) {
     let bookings, total;
 
     if (isCompanyAdmin) {
-      // Tur firma admini: faqat o'z kompaniyasiga tegishli bronlar
-      const pkgRes = await pool.query(
-        'SELECT DISTINCT title FROM packages WHERE company_id = $1',
-        [req.user.company_id]
-      );
-      const titles = pkgRes.rows.map(r => r.title);
-      if (titles.length === 0) return res.json({ bookings: [], total: 0 });
-
-      const inList = titles.map((_, i) => `$${i + 1}`).join(', ');
-      const params = [...titles];
-      let extraWhere = '';
-      if (status) { params.push(status); extraWhere = ` AND status = $${params.length}`; }
-
-      const cntRes = await pool.query(
-        `SELECT COUNT(*) FROM bookings WHERE title IN (${inList})${extraWhere}`, params
-      );
-      total = parseInt(cntRes.rows[0].count);
-
-      const limitIdx = params.length + 1;
-      const offsetIdx = params.length + 2;
-      params.push(limit, offset);
-      const dataRes = await pool.query(
-        `SELECT * FROM bookings WHERE title IN (${inList})${extraWhere} ORDER BY booked_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
-        params
-      );
-      bookings = dataRes.rows;
+      // Tur firma admini: company_id bo'yicha to'g'ridan-to'g'ri filtrlash
+      if (status) {
+        const cntRes = await pool.query(
+          'SELECT COUNT(*) FROM bookings WHERE company_id = $1 AND status = $2',
+          [req.user.company_id, status]
+        );
+        total = parseInt(cntRes.rows[0].count);
+        const dataRes = await pool.query(
+          'SELECT * FROM bookings WHERE company_id = $1 AND status = $2 ORDER BY booked_at DESC LIMIT $3 OFFSET $4',
+          [req.user.company_id, status, limit, offset]
+        );
+        bookings = dataRes.rows;
+      } else {
+        const cntRes = await pool.query(
+          'SELECT COUNT(*) FROM bookings WHERE company_id = $1',
+          [req.user.company_id]
+        );
+        total = parseInt(cntRes.rows[0].count);
+        const dataRes = await pool.query(
+          'SELECT * FROM bookings WHERE company_id = $1 ORDER BY booked_at DESC LIMIT $2 OFFSET $3',
+          [req.user.company_id, limit, offset]
+        );
+        bookings = dataRes.rows;
+      }
     } else {
       // Super admin: barcha bronlar
       if (status) {

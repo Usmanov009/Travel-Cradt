@@ -189,6 +189,21 @@ async function setupDatabase() {
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS travel_date DATE;
     `).catch(() => {});
 
+    // company_id ustunini bookings jadvaliga qo'shish (qaysi firmaga tegishli ekanini bilish uchun)
+    await client.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES tour_companies(id) ON DELETE SET NULL;
+    `).catch(() => {});
+
+    // Mavjud bronlarning company_id sini to'ldirish (packages.title orqali moslashtirish)
+    await client.query(`
+      UPDATE bookings b
+      SET company_id = p.company_id
+      FROM packages p
+      WHERE b.title = p.title
+        AND p.company_id IS NOT NULL
+        AND b.company_id IS NULL;
+    `).catch(() => {});
+
     console.log('Database tables ready.');
 
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
