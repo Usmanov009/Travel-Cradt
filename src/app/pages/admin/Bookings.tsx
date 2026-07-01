@@ -23,15 +23,22 @@ export default function AdminBookings() {
   const [updating, setUpdating] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const load = (status?: string) => {
+  const load = async (status?: string) => {
     if (!token) return;
+    setLoading(true);
     setLoadError(null);
-    const qs = status && status !== 'all' ? `?status=${status}` : '';
-    adminFetch(`/bookings${qs}`, token)
-      .then(r => r.json())
-      .then(d => { setBookings(d.bookings || []); setTotal(d.total || 0); })
-      .catch(e => setLoadError(e.message || 'Yuklab bo\'lmadi'))
-      .finally(() => setLoading(false));
+    try {
+      const qs = status && status !== 'all' ? `?status=${status}` : '';
+      const r = await adminFetch(`/bookings${qs}`, token);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `Server xatosi: ${r.status}`);
+      setBookings(d.bookings || []);
+      setTotal(d.total || 0);
+    } catch (e: any) {
+      setLoadError(e.message || "Yuklab bo'lmadi");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(filter); }, [token, filter]);
