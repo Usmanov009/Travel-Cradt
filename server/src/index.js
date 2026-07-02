@@ -56,7 +56,9 @@ app.post('/api/packages', createPackage);
 app.get('/api/companies', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, phone, address, website, description, logo FROM tour_companies WHERE status = 'approved' ORDER BY name`
+      `SELECT id, name, phone, address, website, description, logo,
+              founded_year, certificates, achievements, countries
+       FROM tour_companies WHERE status = 'approved' ORDER BY name`
     );
     return res.json({ companies: rows });
   } catch (err) {
@@ -67,7 +69,8 @@ app.get('/api/companies', async (req, res) => {
 app.get('/api/companies/:id', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, phone, address, website, description, logo
+      `SELECT id, name, phone, address, website, description, logo,
+              founded_year, certificates, achievements, countries
        FROM tour_companies WHERE id = $1 AND status = 'approved'`,
       [req.params.id]
     );
@@ -78,6 +81,23 @@ app.get('/api/companies/:id', async (req, res) => {
       [req.params.id]
     );
     return res.json({ ...rows[0], packages });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/travel-offers', async (req, res) => {
+  try {
+    const { type } = req.query;
+    const params = [];
+    let query = 'SELECT * FROM travel_offers';
+    if (type === 'flight' || type === 'hotel') {
+      params.push(type);
+      query += ' WHERE type = $1';
+    }
+    query += ' ORDER BY created_at DESC';
+    const { rows } = await pool.query(query, params);
+    return res.json({ offers: rows });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -97,6 +117,7 @@ try {
   app.use('/api/admin/bookings', require('./routes/admin/bookings'));
   app.use('/api/admin/revenue', require('./routes/admin/revenue'));
   app.use('/api/admin/admin-accounts', require('./routes/admin/adminAccounts'));
+  app.use('/api/admin/travel-offers', require('./routes/admin/travelOffers'));
   console.log('Admin routes loaded.');
 } catch (err) {
   console.error('Admin routes failed to load:', err.message);
@@ -187,6 +208,17 @@ async function setupDatabase() {
         logo TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS travel_offers (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(20) NOT NULL DEFAULT 'flight',
+        title VARCHAR(255) NOT NULL,
+        image TEXT,
+        description TEXT,
+        phone VARCHAR(50),
+        location VARCHAR(255),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
     `);
 
     // company_id ustunini packages jadvaliga qo'shish
@@ -215,6 +247,20 @@ async function setupDatabase() {
     // company_id ustunini bookings jadvaliga qo'shish (qaysi firmaga tegishli ekanini bilish uchun)
     await client.query(`
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES tour_companies(id) ON DELETE SET NULL;
+    `).catch(() => {});
+
+    // Tur firma haqida qo'shimcha ma'lumotlar (necha yildan beri, sertifikatlar, yutuqlar, davlatlar)
+    await client.query(`
+      ALTER TABLE tour_companies ADD COLUMN IF NOT EXISTS founded_year INTEGER;
+    `).catch(() => {});
+    await client.query(`
+      ALTER TABLE tour_companies ADD COLUMN IF NOT EXISTS certificates TEXT[];
+    `).catch(() => {});
+    await client.query(`
+      ALTER TABLE tour_companies ADD COLUMN IF NOT EXISTS achievements TEXT[];
+    `).catch(() => {});
+    await client.query(`
+      ALTER TABLE tour_companies ADD COLUMN IF NOT EXISTS countries TEXT[];
     `).catch(() => {});
 
     // Mavjud bronlarning company_id sini to'ldirish (packages.title orqali moslashtirish)

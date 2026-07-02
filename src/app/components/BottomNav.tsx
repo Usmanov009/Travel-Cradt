@@ -1,13 +1,13 @@
 import { NavLink } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Home, MapPin, Globe2, Sparkles, LayoutDashboard } from "lucide-react";
+import { Home, MapPin, Globe2, Sparkles, LayoutGrid } from "lucide-react";
 
 const items = [
   { to: "/", labelKey: "nav.home", icon: Home, end: true },
   { to: "/domestic-travel", labelKey: "nav.domestic", icon: MapPin },
   { to: "/international-travel", labelKey: "nav.international", icon: Globe2 },
   { to: "/custom-package", labelKey: "nav.customPackage", icon: Sparkles },
-  { to: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/menu", labelKey: "menu.title", icon: LayoutGrid },
 ];
 
 export function BottomNav() {

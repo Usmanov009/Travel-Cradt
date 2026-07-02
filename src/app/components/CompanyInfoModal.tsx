@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Phone, MapPin, Globe, Building2 } from "lucide-react";
+import { X, Phone, MapPin, Globe, Building2, Award, Trophy, Flag, Calendar } from "lucide-react";
 import { PackageImage } from "./PackageImage";
 
 interface CompanyPackage {
@@ -20,6 +21,10 @@ interface CompanyDetails {
   website?: string;
   description?: string;
   logo?: string;
+  founded_year?: number | null;
+  certificates?: string[] | null;
+  achievements?: string[] | null;
+  countries?: string[] | null;
   packages: CompanyPackage[];
 }
 
@@ -31,6 +36,7 @@ interface Props {
 
 export function CompanyInfoModal({ companyId, open, onClose }: Props) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [company, setCompany] = useState<CompanyDetails | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -123,6 +129,59 @@ export function CompanyInfoModal({ companyId, open, onClose }: Props) {
                         <Globe className="w-4 h-4 shrink-0" /> {company.website}
                       </div>
                     )}
+                    <div className="flex items-center gap-2 text-sm text-slate-700">
+                      <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+                      {company.founded_year
+                        ? t("company.since", { year: company.founded_year })
+                        : t("company.noInfo")}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div className="rounded-2xl border border-slate-200 p-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        <Award className="w-4 h-4 text-blue-500" /> {t("company.certificates")}
+                      </div>
+                      {company.certificates && company.certificates.length > 0 ? (
+                        <ul className="text-sm text-slate-700 space-y-1">
+                          {company.certificates.map((c, i) => (
+                            <li key={i}>• {c}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-slate-400">{t("company.noInfo")}</p>
+                      )}
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 p-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        <Trophy className="w-4 h-4 text-blue-500" /> {t("company.achievements")}
+                      </div>
+                      {company.achievements && company.achievements.length > 0 ? (
+                        <ul className="text-sm text-slate-700 space-y-1">
+                          {company.achievements.map((a, i) => (
+                            <li key={i}>• {a}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs text-slate-400">{t("company.noInfo")}</p>
+                      )}
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 p-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        <Flag className="w-4 h-4 text-blue-500" /> {t("company.countries")}
+                      </div>
+                      {company.countries && company.countries.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {company.countries.map((c, i) => (
+                            <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400">{t("company.noInfo")}</p>
+                      )}
+                    </div>
                   </div>
 
                   {company.packages.length > 0 && (

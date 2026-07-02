@@ -71,10 +71,10 @@ export function Layout() {
                   {t("nav.customPackage")}
                 </Link>
                 <Link
-                  to="/dashboard"
+                  to="/menu"
                   className="text-slate-700 hover:text-blue-600 transition-colors"
                 >
-                  {t("nav.dashboard")}
+                  {t("menu.title")}
                 </Link>
 
                 <div className="flex items-center gap-2 ml-4 border-l pl-4">
@@ -180,11 +180,11 @@ export function Layout() {
                 {t("nav.customPackage")}
               </Link>
               <Link
-                to="/dashboard"
+                to="/menu"
                 className="block text-slate-700 hover:text-blue-600 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                {t("menu.title")}
               </Link>
               <div className="flex items-center gap-2 pt-4 border-t">
                 <Globe className="w-4 h-4 text-slate-500" />

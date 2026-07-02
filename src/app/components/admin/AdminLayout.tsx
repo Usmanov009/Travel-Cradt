@@ -8,6 +8,7 @@ const superAdminNav = [
   { to: '/admin/bookings', label: 'Bronlar', icon: '📋' },
   { to: '/admin/users', label: 'Foydalanuvchilar', icon: '👥' },
   { to: '/admin/companies', label: 'Tur Firmalar', icon: '🏢' },
+  { to: '/admin/travel-offers', label: 'Avia va Mehmonxona', icon: '✈️' },
   { to: '/admin/revenue', label: 'Daromad', icon: '💰' },
   { to: '/admin/admin-accounts', label: 'Admin Boshqaruvi', icon: '🔑' },
 ];
