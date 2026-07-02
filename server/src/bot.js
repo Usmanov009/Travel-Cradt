@@ -1,6 +1,7 @@
 const { Telegraf, Markup, session } = require('telegraf');
 const Groq = require('groq-sdk');
 const pool = require('./db');
+const { normalizePhone } = require('./utils/phone');
 
 const MODEL = 'llama-3.3-70b-versatile';
 
@@ -178,9 +179,7 @@ function createBot() {
     }
 
     ctx.session = ctx.session || {};
-    ctx.session.phone = contact.phone_number.startsWith('+')
-      ? contact.phone_number
-      : '+' + contact.phone_number;
+    ctx.session.phone = normalizePhone(contact.phone_number);
     ctx.session.state = 'awaiting_name';
 
     await ctx.reply(

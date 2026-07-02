@@ -7,7 +7,7 @@ interface Message {
   content: string;
 }
 
-export function AiChatWidget() {
+export function AiChatWidget({ raised = false }: { raised?: boolean }) {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,7 +72,11 @@ export function AiChatWidget() {
   const suggestions = (t("chat.suggestions", { returnObjects: true }) as string[]) || [];
 
   return (
-    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 sm:right-6 z-50 flex flex-col items-end gap-3">
+    <div
+      className={`fixed ${
+        raised ? "bottom-[calc(4.5rem+env(safe-area-inset-bottom))]" : "bottom-[max(1rem,env(safe-area-inset-bottom))]"
+      } right-3 sm:right-6 z-50 flex flex-col items-end gap-3`}
+    >
       {isOpen && (
         <div
           className="w-[min(calc(100vw-1.5rem),390px)] bg-white rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"

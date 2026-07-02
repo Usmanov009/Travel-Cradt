@@ -17,6 +17,7 @@ const resources = {
         domestic: "Ichki Sayohat",
         international: "Tashqi Sayohat",
         customPackage: "O'z Paketimni Yaratish",
+        dashboard: "Kabinet",
       },
       domestic: {
         title: "O'zbekiston bo'ylab Sayohatlar",
@@ -243,6 +244,7 @@ const resources = {
         domestic: "Внутренние Путешествия",
         international: "Международные",
         customPackage: "Создать Свой Пакет",
+        dashboard: "Кабинет",
       },
       domestic: {
         title: "Путешествия по Узбекистану",
@@ -469,6 +471,7 @@ const resources = {
         domestic: "Domestic Travel",
         international: "International",
         customPackage: "Create Custom Package",
+        dashboard: "Dashboard",
       },
       domestic: {
         title: "Travel Across Uzbekistan",

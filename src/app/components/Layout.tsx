@@ -3,10 +3,13 @@ import { useTranslation } from "react-i18next";
 import { Globe, Plane, MapPin, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { AiChatWidget } from "./AiChatWidget";
+import { BottomNav } from "./BottomNav";
+import { useTelegramWebApp } from "../hooks/useTelegramWebApp";
 
 export function Layout() {
   const { t, i18n } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isTelegram } = useTelegramWebApp();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -26,56 +29,95 @@ export function Layout() {
               </span>
             </Link>
 
-            <button
-              className="md:hidden p-2"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <div className="w-6 h-5 flex flex-col justify-between">
-                <span className="w-full h-0.5 bg-slate-700 rounded"></span>
-                <span className="w-full h-0.5 bg-slate-700 rounded"></span>
-                <span className="w-full h-0.5 bg-slate-700 rounded"></span>
+            {!isTelegram && (
+              <button
+                className="md:hidden p-2"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                <div className="w-6 h-5 flex flex-col justify-between">
+                  <span className="w-full h-0.5 bg-slate-700 rounded"></span>
+                  <span className="w-full h-0.5 bg-slate-700 rounded"></span>
+                  <span className="w-full h-0.5 bg-slate-700 rounded"></span>
+                </div>
+              </button>
+            )}
+
+            {!isTelegram && (
+              <div className="hidden md:flex items-center gap-6">
+                <Link
+                  to="/"
+                  className="text-slate-700 hover:text-blue-600 transition-colors flex items-center gap-2"
+                >
+                  <MapPin className="w-4 h-4" />
+                  {t("nav.home")}
+                </Link>
+                <Link
+                  to="/domestic-travel"
+                  className="text-slate-700 hover:text-blue-600 transition-colors"
+                >
+                  {t("nav.domestic")}
+                </Link>
+                <Link
+                  to="/international-travel"
+                  className="text-slate-700 hover:text-blue-600 transition-colors"
+                >
+                  {t("nav.international")}
+                </Link>
+                <Link
+                  to="/custom-package"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {t("nav.customPackage")}
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="text-slate-700 hover:text-blue-600 transition-colors"
+                >
+                  {t("nav.dashboard")}
+                </Link>
+
+                <div className="flex items-center gap-2 ml-4 border-l pl-4">
+                  <Globe className="w-4 h-4 text-slate-500" />
+                  <button
+                    onClick={() => changeLanguage("uz")}
+                    className={`px-2 py-1 rounded ${
+                      i18n.language === "uz"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    UZ
+                  </button>
+                  <button
+                    onClick={() => changeLanguage("ru")}
+                    className={`px-2 py-1 rounded ${
+                      i18n.language === "ru"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    RU
+                  </button>
+                  <button
+                    onClick={() => changeLanguage("en")}
+                    className={`px-2 py-1 rounded ${
+                      i18n.language === "en"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
               </div>
-            </button>
+            )}
 
-            <div className="hidden md:flex items-center gap-6">
-              <Link
-                to="/"
-                className="text-slate-700 hover:text-blue-600 transition-colors flex items-center gap-2"
-              >
-                <MapPin className="w-4 h-4" />
-                {t("nav.home")}
-              </Link>
-              <Link
-                to="/domestic-travel"
-                className="text-slate-700 hover:text-blue-600 transition-colors"
-              >
-                {t("nav.domestic")}
-              </Link>
-              <Link
-                to="/international-travel"
-                className="text-slate-700 hover:text-blue-600 transition-colors"
-              >
-                {t("nav.international")}
-              </Link>
-              <Link
-                to="/custom-package"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                {t("nav.customPackage")}
-              </Link>
-              <Link
-                to="/dashboard"
-                className="text-slate-700 hover:text-blue-600 transition-colors"
-              >
-                Dashboard
-              </Link>
-
-              <div className="flex items-center gap-2 ml-4 border-l pl-4">
-                <Globe className="w-4 h-4 text-slate-500" />
+            {isTelegram && (
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => changeLanguage("uz")}
-                  className={`px-2 py-1 rounded ${
+                  className={`px-2 py-1 text-xs rounded ${
                     i18n.language === "uz"
                       ? "bg-blue-600 text-white"
                       : "text-slate-600 hover:bg-slate-100"
@@ -85,7 +127,7 @@ export function Layout() {
                 </button>
                 <button
                   onClick={() => changeLanguage("ru")}
-                  className={`px-2 py-1 rounded ${
+                  className={`px-2 py-1 text-xs rounded ${
                     i18n.language === "ru"
                       ? "bg-blue-600 text-white"
                       : "text-slate-600 hover:bg-slate-100"
@@ -95,7 +137,7 @@ export function Layout() {
                 </button>
                 <button
                   onClick={() => changeLanguage("en")}
-                  className={`px-2 py-1 rounded ${
+                  className={`px-2 py-1 text-xs rounded ${
                     i18n.language === "en"
                       ? "bg-blue-600 text-white"
                       : "text-slate-600 hover:bg-slate-100"
@@ -104,10 +146,10 @@ export function Layout() {
                   EN
                 </button>
               </div>
-            </div>
+            )}
           </div>
 
-          {isMenuOpen && (
+          {!isTelegram && isMenuOpen && (
             <div className="md:hidden mt-4 pb-4 space-y-2">
               <Link
                 to="/"
@@ -182,11 +224,13 @@ export function Layout() {
         </div>
       </nav>
 
-      <main>
+      <main className={isTelegram ? "pb-20" : undefined}>
         <Outlet />
       </main>
 
-      <AiChatWidget />
+      <AiChatWidget raised={isTelegram} />
+
+      {isTelegram && <BottomNav />}
 
       <footer className="bg-slate-900 text-white py-10 sm:py-12 mt-16 sm:mt-20">
         <div className="container mx-auto px-4 sm:px-6">

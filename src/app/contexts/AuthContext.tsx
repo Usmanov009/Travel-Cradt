@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import WebApp from '@twa-dev/sdk';
 
 type User = { id: number; name: string; phone: string; role: string } | null;
 
@@ -36,6 +37,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) localStorage.setItem('user_data', JSON.stringify(user));
     else localStorage.removeItem('user_data');
   }, [user]);
+
+  // Bot orqali "Web Ilovani ochish" bosilib kirilganda, foydalanuvchi bot orqali
+  // avval telefon/ismini bergan bo'lsa, qaytadan ro'yxatdan o'tkazmasdan avtomatik kiritamiz.
+  useEffect(() => {
+    if (token || user) return;
+    const initData = WebApp?.initData;
+    if (!initData) return;
+
+    fetch('/api/auth/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData }),
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json();
+        setToken(data.token);
+        setUser(data.user);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (phone: string, password: string) => {
     const res = await fetch('/api/auth/login', {
