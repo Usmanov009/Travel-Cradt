@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Plane, Phone, MapPin } from "lucide-react";
+import { Plane, Phone, MapPin, Building2 } from "lucide-react";
 import { PackageImage } from "../components/PackageImage";
+import { CompanyInfoModal } from "../components/CompanyInfoModal";
+import { useCompanies } from "../hooks/useCompanies";
+import { SAMPLE_TRAVEL_OFFERS } from "../data/sampleListings";
 
 interface TravelOffer {
   id: number;
@@ -11,13 +14,17 @@ interface TravelOffer {
   description?: string;
   phone?: string;
   location?: string;
+  companyId?: number | null;
+  companyName?: string;
 }
 
 export function TravelOffersPage() {
   const { t } = useTranslation();
+  const { companies } = useCompanies();
   const [offers, setOffers] = useState<TravelOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "flight" | "hotel">("all");
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/travel-offers")
@@ -27,7 +34,16 @@ export function TravelOffersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = offers.filter((o) => filter === "all" || o.type === filter);
+  // Show example listings until the admin panel has real entries.
+  const displayOffers: TravelOffer[] =
+    offers.length > 0
+      ? offers
+      : SAMPLE_TRAVEL_OFFERS.map((item, i) => {
+          const company = companies.length > 0 ? companies[i % companies.length] : undefined;
+          return { ...item, companyId: company?.id ?? null, companyName: company?.name };
+        });
+
+  const filtered = displayOffers.filter((o) => filter === "all" || o.type === filter);
 
   const tabs: { id: "all" | "flight" | "hotel"; label: string }[] = [
     { id: "all", label: t("travelOffers.all") },
@@ -103,7 +119,15 @@ export function TravelOffersPage() {
                     </div>
                   )}
                   {offer.description && (
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-3">{offer.description}</p>
+                    <p className="text-sm text-slate-500 mb-3 line-clamp-3">{offer.description}</p>
+                  )}
+                  {offer.companyName && (
+                    <button
+                      onClick={() => setSelectedCompanyId(offer.companyId ?? null)}
+                      className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:underline mb-3"
+                    >
+                      <Building2 className="w-3.5 h-3.5 shrink-0" /> {offer.companyName}
+                    </button>
                   )}
                   {offer.phone && (
                     <a
@@ -119,6 +143,12 @@ export function TravelOffersPage() {
           </div>
         )}
       </div>
+
+      <CompanyInfoModal
+        companyId={selectedCompanyId}
+        open={selectedCompanyId !== null}
+        onClose={() => setSelectedCompanyId(null)}
+      />
     </div>
   );
 }

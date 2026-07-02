@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Building2, Plane, CalendarCheck, ChevronRight, LayoutGrid } from "lucide-react";
+import { Building2, Plane, CalendarCheck, ChevronRight, LayoutGrid, Home, Car } from "lucide-react";
 
 export function MenuPage() {
   const { t } = useTranslation();
@@ -11,6 +11,18 @@ export function MenuPage() {
       icon: Building2,
       title: t("menu.companies"),
       desc: t("menu.companiesDesc"),
+    },
+    {
+      to: "/house-rent",
+      icon: Home,
+      title: t("menu.houseRent"),
+      desc: t("menu.houseRentDesc"),
+    },
+    {
+      to: "/car-rent",
+      icon: Car,
+      title: t("menu.carRent"),
+      desc: t("menu.carRentDesc"),
     },
     {
       to: "/travel-offers",

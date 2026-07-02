@@ -9,6 +9,8 @@ import { CustomPackagePage } from "./pages/CustomPackagePage";
 import { MenuPage } from "./pages/MenuPage";
 import { CompaniesListPage } from "./pages/CompaniesListPage";
 import { TravelOffersPage } from "./pages/TravelOffersPage";
+import { HouseRentPage } from "./pages/HouseRentPage";
+import { CarRentPage } from "./pages/CarRentPage";
 import { NotFound } from "./pages/NotFound";
 
 // Super Admin Panel
@@ -36,6 +38,8 @@ export const router = createBrowserRouter([
       { path: "custom-package", Component: CustomPackagePage },
       { path: "menu", Component: MenuPage },
       { path: "companies", Component: CompaniesListPage },
+      { path: "house-rent", Component: HouseRentPage },
+      { path: "car-rent", Component: CarRentPage },
       { path: "travel-offers", Component: TravelOffersPage },
       { path: "*", Component: NotFound },
     ],

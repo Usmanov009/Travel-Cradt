@@ -268,7 +268,21 @@ export function Layout() {
               <h4 className="font-semibold mb-3 sm:mb-4 text-white">Contact</h4>
               <ul className="space-y-1.5 sm:space-y-2 text-slate-400 text-sm">
                 <li>support@travelcraft.ai</li>
-                <li>+998 XX XXX XX XX</li>
+                <li>
+                  <a href="tel:+9990201051" className="hover:text-white transition-colors">
+                    +9990201051
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://t.me/travelai_admin"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-white transition-colors"
+                  >
+                    @travelai_admin
+                  </a>
+                </li>
                 <li>Tashkent, Uzbekistan</li>
               </ul>
             </div>
