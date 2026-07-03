@@ -261,10 +261,10 @@ export function getCategoryImage(category: string): string | undefined {
 }
 
 export function getPackageImageByRef(
-  type: PackageType | "custom",
+  type: PackageType | "custom" | "combo",
   id: number,
 ): string | undefined {
-  if (type === "custom") return PACKAGE_MEDIA["domestic-13"]?.cover;
+  if (type === "custom" || type === "combo") return PACKAGE_MEDIA["domestic-13"]?.cover;
   const media = PACKAGE_MEDIA[packageMediaKey(type, id)];
   return media?.cover;
 }

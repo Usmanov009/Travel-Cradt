@@ -17,6 +17,7 @@ const TYPE_CONFIG = {
   domestic:      { label: "Ichki tur",    icon: <MapPin className="w-3.5 h-3.5" />,     color: "bg-blue-100 text-blue-700" },
   international: { label: "Xalqaro tur",  icon: <Plane className="w-3.5 h-3.5" />,      color: "bg-purple-100 text-purple-700" },
   custom:        { label: "Maxsus tur",   icon: <Sparkles className="w-3.5 h-3.5" />,   color: "bg-amber-100 text-amber-700" },
+  combo:         { label: "Combo Tour",   icon: <Sparkles className="w-3.5 h-3.5" />,   color: "bg-orange-100 text-orange-700" },
 };
 
 export function DashboardPage() {
@@ -255,6 +256,7 @@ export function DashboardPage() {
                     <div className={`h-1.5 w-full bg-gradient-to-r ${
                       booking.type === "domestic" ? "from-blue-500 to-cyan-500" :
                       booking.type === "international" ? "from-purple-500 to-pink-500" :
+                      booking.type === "combo" ? "from-orange-500 to-amber-400" :
                       "from-amber-400 to-orange-500"
                     }`} />
 

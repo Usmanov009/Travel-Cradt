@@ -1,4 +1,4 @@
-export type BookingType = "domestic" | "international" | "custom";
+export type BookingType = "domestic" | "international" | "custom" | "combo";
 
 export interface StoredBooking {
   id: number;

@@ -1,11 +1,18 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Building2, Plane, CalendarCheck, ChevronRight, LayoutGrid, Home, Car } from "lucide-react";
+import { Building2, Plane, CalendarCheck, ChevronRight, LayoutGrid, Home, Car, Sparkles } from "lucide-react";
 
 export function MenuPage() {
   const { t } = useTranslation();
 
   const tiles = [
+    {
+      to: "/combo-tours",
+      icon: Sparkles,
+      title: "✨ Combo Tours",
+      desc: "Bitta safarda ikkita davlat — tayyor premium marshrutlar",
+      highlight: true,
+    },
     {
       to: "/companies",
       icon: Building2,
@@ -51,20 +58,30 @@ export function MenuPage() {
       </div>
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-4">
-        {tiles.map(({ to, icon: Icon, title, desc }) => (
+        {tiles.map(({ to, icon: Icon, title, desc, highlight }) => (
           <Link
             key={to}
             to={to}
-            className="flex items-center gap-4 bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-lg hover:border-blue-300 transition-all"
+            className={`flex items-center gap-4 rounded-2xl border p-5 hover:shadow-lg transition-all ${
+              highlight
+                ? "bg-gradient-to-r from-slate-900 to-slate-800 border-amber-400/40 hover:border-amber-400"
+                : "bg-white border-slate-200 hover:border-blue-300"
+            }`}
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center flex-shrink-0">
-              <Icon className="w-7 h-7 text-blue-600" />
+            <div
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                highlight
+                  ? "bg-gradient-to-br from-amber-400 to-orange-500"
+                  : "bg-gradient-to-br from-blue-100 to-cyan-100"
+              }`}
+            >
+              <Icon className={`w-7 h-7 ${highlight ? "text-slate-900" : "text-blue-600"}`} />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-slate-900">{title}</h3>
-              <p className="text-sm text-slate-500">{desc}</p>
+              <h3 className={`font-bold ${highlight ? "text-white" : "text-slate-900"}`}>{title}</h3>
+              <p className={`text-sm ${highlight ? "text-white/60" : "text-slate-500"}`}>{desc}</p>
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-300 shrink-0" />
+            <ChevronRight className={`w-5 h-5 shrink-0 ${highlight ? "text-white/30" : "text-slate-300"}`} />
           </Link>
         ))}
       </div>

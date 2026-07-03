@@ -11,6 +11,8 @@ import { CompaniesListPage } from "./pages/CompaniesListPage";
 import { TravelOffersPage } from "./pages/TravelOffersPage";
 import { HouseRentPage } from "./pages/HouseRentPage";
 import { CarRentPage } from "./pages/CarRentPage";
+import { ComboToursPage } from "./pages/ComboToursPage";
+import { ComboTourDetailPage } from "./pages/ComboTourDetailPage";
 import { NotFound } from "./pages/NotFound";
 
 // Super Admin Panel
@@ -41,6 +43,8 @@ export const router = createBrowserRouter([
       { path: "house-rent", Component: HouseRentPage },
       { path: "car-rent", Component: CarRentPage },
       { path: "travel-offers", Component: TravelOffersPage },
+      { path: "combo-tours", Component: ComboToursPage },
+      { path: "combo-tours/:slug", Component: ComboTourDetailPage },
       { path: "*", Component: NotFound },
     ],
   },

@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { PackageCard } from "../components/PackageCard";
+import { AiComboBanner } from "../components/AiComboBanner";
 import { usePackages } from "../hooks/usePackages";
-import { Search, SlidersHorizontal, Globe2 } from "lucide-react";
+import { recommendComboTours } from "../utils/comboTours";
+import { Search, SlidersHorizontal, Globe2, Sparkles } from "lucide-react";
 
 export function InternationalTravelPage() {
   const { t } = useTranslation();
@@ -37,6 +39,11 @@ export function InternationalTravelPage() {
       pkg.country?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  const comboRecommendations = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return recommendComboTours({ country: searchQuery.trim() });
+  }, [searchQuery]);
 
   const countries = [
     { name: "Turkey", count: 2 },
@@ -124,6 +131,18 @@ export function InternationalTravelPage() {
             <span className="font-semibold text-slate-800">{filteredPackages.length}</span> ta tur topildi
           </p>
         </div>
+
+        {!loading && comboRecommendations.length > 0 && (
+          <div className="mb-6 sm:mb-8 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              <h3 className="text-base sm:text-lg font-bold text-slate-800">AI tavsiyasi</h3>
+            </div>
+            {comboRecommendations.map((rec) => (
+              <AiComboBanner key={rec.tour.id} recommendation={rec} />
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <div className="text-center py-16 text-slate-400">Yuklanmoqda...</div>

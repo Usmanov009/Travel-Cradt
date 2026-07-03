@@ -11,6 +11,8 @@ import type { TravelPackage } from "../data/packages";
 import { getAppLang } from "../utils/locale";
 import { getCategoryImage, PACKAGE_MEDIA } from "../data/packageMedia";
 import { PackageImage } from "../components/PackageImage";
+import { COMBO_TOURS } from "../data/comboTours";
+import { ComboTourCard } from "../components/ComboTourCard";
 
 const HERO_DOMESTIC_IMAGE = PACKAGE_MEDIA["domestic-1"].cover;
 const HERO_INTERNATIONAL_IMAGE = PACKAGE_MEDIA["international-2"].cover;
@@ -397,6 +399,42 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Combo Tours (eksklyuziv) ── */}
+      <section className="py-14 md:py-20 bg-slate-950 relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-16 -right-16 h-80 w-80 rounded-full bg-amber-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-16 h-72 w-72 rounded-full bg-orange-500/10 blur-3xl" />
+        <div className="container mx-auto px-4 relative">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 md:mb-12">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 text-amber-300 px-3 py-1 rounded-full mb-3 text-xs sm:text-sm font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                TripCraft eksklyuziv
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                ✨ Combo Tours
+              </h2>
+              <p className="text-white/60 mt-2 max-w-xl text-sm sm:text-base">
+                Bitta safarda ikkita davlat — oldindan tayyorlangan premium marshrutlar.
+              </p>
+            </div>
+            <Link
+              to="/combo-tours"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-semibold px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-amber-500/30 transition-all self-start sm:self-auto"
+            >
+              Barchasini ko'rish
+              <Compass className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
+            {COMBO_TOURS.slice(0, 3).map((tour) => (
+              <ComboTourCard key={tour.id} tour={tour} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA Banner ── */}
       <section className="py-14 md:py-24 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10"

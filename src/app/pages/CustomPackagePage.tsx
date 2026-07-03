@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { PACKAGE_MEDIA } from "../data/packageMedia";
 import { PackageImage } from "../components/PackageImage";
 import { PackageCard } from "../components/PackageCard";
+import { AiComboBanner } from "../components/AiComboBanner";
 import { DestinationMap } from "../components/DestinationMap";
 import { usePackages } from "../hooks/usePackages";
 import type { PackageType, TravelPackage } from "../data/packages";
@@ -15,6 +16,7 @@ import {
   bookingDateError,
 } from "../utils/bookingDates";
 import { calculateCustomPrice } from "../utils/pricing";
+import { recommendComboTours } from "../utils/comboTours";
 import {
   Sparkles,
   MapPin,
@@ -715,6 +717,34 @@ export function CustomPackagePage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchPackages, formData, destinationLabel]);
+
+  // AI Combo Tour tavsiyasi — AI yangi combo yaratmaydi, faqat tizimda oldindan
+  // mavjud bo'lgan Combo Tour paketlari orasidan foydalanuvchining byudjeti, sayohat
+  // davomiyligi va qiziqishlariga mos kelganini tanlab tavsiya qiladi.
+  const comboBudget = useMemo(() => {
+    const b = formData.budget;
+    if (!b) return undefined;
+    if (b.startsWith("$")) {
+      const n = parseInt(b.replace(/\D/g, ""), 10);
+      return Number.isNaN(n) ? undefined : n;
+    }
+    const tier = getBudgetTier();
+    if (tier === "budget") return 500;
+    if (tier === "mid-range") return 1500;
+    if (tier === "luxury") return 3000;
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.budget]);
+
+  const comboRecommendations = useMemo(() => {
+    if (formData.destinationType !== "international" || !destinationLabel) return [];
+    return recommendComboTours({
+      country: destinationLabel,
+      budget: comboBudget,
+      days: formData.days,
+      interests: formData.interests,
+    });
+  }, [destinationLabel, comboBudget, formData.days, formData.interests, formData.destinationType]);
 
   const getTransportIcon = (key: string, selected: boolean) => {
     const cls = `w-8 h-8 mb-3 mx-auto ${selected ? "text-white" : "text-blue-600"}`;
@@ -1534,6 +1564,18 @@ export function CustomPackagePage() {
             <h1 className="text-2xl md:text-3xl font-bold">{t("customPackage.matchesTitle")}</h1>
             <p className="text-slate-500 mt-1">{destinationLabel} · {formData.days} kun · {formData.travelers} kishi</p>
           </div>
+
+          {!matchesLoading && comboRecommendations.length > 0 && (
+            <div className="mb-8 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-5 h-5 text-amber-500" />
+                <h2 className="text-lg font-bold text-slate-800">AI tavsiyasi — Combo Tour</h2>
+              </div>
+              {comboRecommendations.map((rec) => (
+                <AiComboBanner key={rec.tour.id} recommendation={rec} />
+              ))}
+            </div>
+          )}
 
           {matchesLoading ? (
             <div className="flex justify-center gap-1 py-12">
