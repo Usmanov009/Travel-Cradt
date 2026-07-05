@@ -16,7 +16,7 @@ const resources = {
         home: "Bosh sahifa",
         domestic: "Ichki Sayohat",
         international: "Tashqi Sayohat",
-        customPackage: "O'z Paketimni Yaratish",
+        customPackage: "O'z Paketni Topish",
         dashboard: "Kabinet",
       },
       domestic: {
@@ -50,7 +50,7 @@ const resources = {
         flightIncluded: "Parvoz kiritilgan",
       },
       customPackage: {
-        title: "O'zingizga Mos Paket Toping",
+        title: "O'z Paketni Topish",
         pageLabel: "Mos Paket Qidiruvchisi",
         description: "Bir necha savolga javob bering va tur firmalar qo'ygan tayyor paketlar orasidan sizga eng mos kelganlarini toping.",
         introText: "Bir necha savolga javob bering va tur firmalar qo'ygan tayyor paketlar orasidan sizga eng mos kelganlarini toping.",
@@ -286,7 +286,7 @@ const resources = {
         home: "Главная",
         domestic: "Внутренние Путешествия",
         international: "Международные",
-        customPackage: "Создать Свой Пакет",
+        customPackage: "Найти Свой Пакет",
         dashboard: "Кабинет",
       },
       domestic: {
@@ -320,7 +320,7 @@ const resources = {
         flightIncluded: "Перелёт включён",
       },
       customPackage: {
-        title: "Найдите Подходящий Пакет",
+        title: "Найти Свой Пакет",
         pageLabel: "Поиск Подходящих Пакетов",
         description: "Ответьте на несколько вопросов, и мы подберём для вас подходящие готовые пакеты от туристических компаний.",
         introText: "Ответьте на несколько вопросов, и мы подберём для вас подходящие готовые пакеты от туристических компаний.",
@@ -556,7 +556,7 @@ const resources = {
         home: "Home",
         domestic: "Domestic Travel",
         international: "International",
-        customPackage: "Create Custom Package",
+        customPackage: "Find My Package",
         dashboard: "Dashboard",
       },
       domestic: {
@@ -590,7 +590,7 @@ const resources = {
         flightIncluded: "Flight Included",
       },
       customPackage: {
-        title: "Find Your Matching Package",
+        title: "Find My Package",
         pageLabel: "Package Matcher",
         description: "Answer a few questions and we'll find the best ready-made packages from our partner tour companies.",
         introText: "Answer a few questions and we'll find the best ready-made packages from our partner tour companies.",

@@ -5,8 +5,8 @@ import { Home, MapPin, Globe2, Sparkles, LayoutGrid } from "lucide-react";
 const items = [
   { to: "/", labelKey: "nav.home", icon: Home, end: true },
   { to: "/domestic-travel", labelKey: "nav.domestic", icon: MapPin },
-  { to: "/international-travel", labelKey: "nav.international", icon: Globe2 },
   { to: "/custom-package", labelKey: "nav.customPackage", icon: Sparkles },
+  { to: "/international-travel", labelKey: "nav.international", icon: Globe2 },
   { to: "/menu", labelKey: "menu.title", icon: LayoutGrid },
 ];
 
