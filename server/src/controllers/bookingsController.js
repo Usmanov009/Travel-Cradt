@@ -17,6 +17,9 @@ async function createBooking(req, res) {
     console.log('[createBooking]', { title, name, phone, guests, status, company_id: company_id ?? null });
 
     let resolvedTelegramId = telegram_id || null;
+    let finalName = name;
+    let finalPhone = phone;
+
     try {
       if (!resolvedTelegramId && phone) {
         const cleanPhone = String(phone).replace(/\s/g, '');
@@ -27,6 +30,23 @@ async function createBooking(req, res) {
         if (tgUser.rows.length > 0) resolvedTelegramId = tgUser.rows[0].telegram_id;
       }
     } catch {}
+
+    // If this is a telegram user, validate and use their registered data
+    if (resolvedTelegramId) {
+      try {
+        const registeredUser = await pool.query(
+          `SELECT name, phone FROM telegram_users WHERE telegram_id = $1`,
+          [String(resolvedTelegramId)]
+        );
+        if (registeredUser.rows.length > 0) {
+          const userData = registeredUser.rows[0];
+          // Use registered data from telegram
+          finalName = userData.name || name;
+          finalPhone = userData.phone || phone;
+          console.log('[createBooking] Using Telegram registered data:', { finalName, finalPhone });
+        }
+      } catch {}
+    }
 
     // company_id: avval bodydan, yo'q bo'lsa paket nomi orqali topamiz
     let companyId = company_id || null;
@@ -45,9 +65,9 @@ async function createBooking(req, res) {
         `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
          RETURNING *`,
-        [title, type, price, name, phone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId]
+        [title, type, price, finalName, finalPhone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId]
       );
-      console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId);
+      console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId, 'telegram_id:', resolvedTelegramId);
       return res.status(201).json(rows[0]);
     } catch (insertErr) {
       console.warn('[createBooking] full insert failed:', insertErr.message, '— trying fallback');
@@ -55,7 +75,7 @@ async function createBooking(req, res) {
         `INSERT INTO bookings (title, type, price, name, phone, guests, days, status)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
          RETURNING *`,
-        [title, type, price, name, phone, guests || 1, days || 1, status || 'pending']
+        [title, type, price, finalName, finalPhone, guests || 1, days || 1, status || 'pending']
       );
       console.log('[createBooking] fallback saved id:', rows[0].id);
       return res.status(201).json(rows[0]);

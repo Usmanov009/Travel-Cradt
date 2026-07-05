@@ -193,6 +193,24 @@ function createBot() {
     );
   });
 
+  // ─── Check User Registration ────────────────────────────
+  const checkUserRegistration = async (ctx) => {
+    const existingUser = await getTelegramUser(ctx.from.id);
+    if (!existingUser) {
+      ctx.session.state = 'awaiting_phone';
+      await ctx.reply(
+        `⚠️ *Avvalo ro'yxatdan o'tishingiz kerak\\!*\n\n` +
+        `Telefon raqamingizni ulashing:`,
+        {
+          parse_mode: 'MarkdownV2',
+          ...phoneRequestKeyboard(),
+        }
+      );
+      return false;
+    }
+    return true;
+  };
+
   // ─── /help ─────────────────────────────────────────────
   bot.command('help', async (ctx) => {
     await ctx.reply(
@@ -211,6 +229,8 @@ function createBot() {
 
   // ─── /packages ─────────────────────────────────────────
   bot.command('packages', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
     await ctx.reply(
       '📦 *Qaysi tur kategoriyasini ko\'rmoqchisiz?*',
       {
@@ -224,13 +244,23 @@ function createBot() {
   });
 
   // ─── /domestic ─────────────────────────────────────────
-  bot.command('domestic', (ctx) => showPackageList(ctx, 'domestic'));
+  bot.command('domestic', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
+    await showPackageList(ctx, 'domestic');
+  });
 
   // ─── /international ────────────────────────────────────
-  bot.command('international', (ctx) => showPackageList(ctx, 'international'));
+  bot.command('international', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
+    await showPackageList(ctx, 'international');
+  });
 
   // ─── /ai ───────────────────────────────────────────────
   bot.command('ai', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
     ctx.session = ctx.session || {};
     ctx.session.messages = [];
     await ctx.reply(
@@ -243,16 +273,22 @@ function createBot() {
 
   // ─── Callbacks ─────────────────────────────────────────
   bot.action('cat_domestic', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
     await ctx.answerCbQuery();
     await showPackageList(ctx, 'domestic');
   });
 
   bot.action('cat_international', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
     await ctx.answerCbQuery();
     await showPackageList(ctx, 'international');
   });
 
   bot.action('ai_start', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
     await ctx.answerCbQuery();
     ctx.session = ctx.session || {};
     ctx.session.messages = [];
@@ -289,6 +325,8 @@ function createBot() {
 
   // pkg_domestic_1, pkg_international_3 ...
   bot.action(/^pkg_(domestic|international)_(\d+)$/, async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
     await ctx.answerCbQuery();
     const type = ctx.match[1];
     const localId = parseInt(ctx.match[2]);

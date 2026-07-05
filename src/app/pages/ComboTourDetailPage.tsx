@@ -29,6 +29,7 @@ export function ComboTourDetailPage() {
   const [phone, setPhone] = useState("");
   const [guests, setGuests] = useState(2);
   const [existingBooking, setExistingBooking] = useState<StoredBooking | null>(null);
+  const [isTelegramUser, setIsTelegramUser] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -56,6 +57,23 @@ export function ComboTourDetailPage() {
     }
   }, [searchParams]);
 
+  // Telegram WebApp orqali kirgan bo'lsa, ism va raqamni avtomatik to'ldirish
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (!tg) return;
+    const telegramId = tg.initDataUnsafe?.user?.id;
+    if (!telegramId) return;
+
+    setIsTelegramUser(true);
+    fetch(`/api/tg-user/${telegramId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.name) setName(data.name);
+        if (data.phone) setPhone(data.phone);
+      })
+      .catch(() => {});
+  }, []);
+
   if (!tour) {
     return (
       <div className="container mx-auto px-4 py-24 text-center">
@@ -70,7 +88,10 @@ export function ComboTourDetailPage() {
   const totalPrice = calculatePackagePrice(tour.price, Math.max(1, guests));
 
   const handleBooking = async () => {
-    if (!user) {
+    // Telegram WebApp foydalanuvchilari login talab qilmaydi
+    const tg = (window as any).Telegram?.WebApp;
+    const telegramId = tg?.initDataUnsafe?.user?.id?.toString() ?? null;
+    if (!user && !telegramId) {
       setShowLoginModal(true);
       return;
     }
@@ -119,6 +140,7 @@ export function ComboTourDetailPage() {
           guests,
           days: tour.days,
           status: "pending",
+          telegram_id: telegramId,
         }),
       });
       if (res.ok) {
@@ -235,13 +257,26 @@ export function ComboTourDetailPage() {
             </div>
 
             <div className="space-y-4 mb-5">
+              {isTelegramUser && (
+                <div className="rounded-lg border-2 border-green-500 bg-green-50 p-3">
+                  <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5">
+                    <span>✅</span> Telegram Ro'yxatidan Ma'lumotlar
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Sizning ism va telefon raqamingiz Telegram registratsiyasidan olingan.
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Ism</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ismingiz"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  readOnly={isTelegramUser}
+                  className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+                    isTelegramUser ? "opacity-75 cursor-not-allowed bg-slate-50" : ""
+                  }`}
                 />
               </div>
               <div>
@@ -250,7 +285,10 @@ export function ComboTourDetailPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+998 90 123 45 67"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  readOnly={isTelegramUser}
+                  className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+                    isTelegramUser ? "opacity-75 cursor-not-allowed bg-slate-50" : ""
+                  }`}
                 />
               </div>
               <div>

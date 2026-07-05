@@ -29,6 +29,7 @@ export function PackageDetailPage() {
   const [phone, setPhone] = useState("");
   const [guests, setGuests] = useState(1);
   const [existingBooking, setExistingBooking] = useState<StoredBooking | null>(null);
+  const [isTelegramUser, setIsTelegramUser] = useState(false);
 
   const totalPrice = packageData
     ? calculatePackagePrice(packageData.price, Math.max(1, guests))
@@ -68,6 +69,7 @@ export function PackageDetailPage() {
     const telegramId = tg.initDataUnsafe?.user?.id;
     if (!telegramId) return;
 
+    setIsTelegramUser(true);
     fetch(`/api/tg-user/${telegramId}`)
       .then((r) => r.json())
       .then((data) => {
@@ -315,6 +317,16 @@ export function PackageDetailPage() {
               </div>
 
               <div className="grid gap-4">
+                {isTelegramUser && (
+                  <div className="rounded-2xl border-2 border-green-500 bg-green-50 p-4">
+                    <p className="text-sm font-semibold text-green-700 flex items-center gap-2">
+                      <span>✅</span> Telegram Ro'yxatidan Ma'lumotlar
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Sizning ism va telefon raqamingiz Telegram registratsiyasidan olingan va bron qilishda ishlatilinadi.
+                    </p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-2 text-sm">
                     {t("detail.yourName")}
@@ -322,7 +334,10 @@ export function PackageDetailPage() {
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder={t("detail.namePlaceholder")}
-                      className="rounded-2xl border border-white/30 bg-white/10 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-white"
+                      readOnly={isTelegramUser}
+                      className={`rounded-2xl border border-white/30 bg-white/10 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-white ${
+                        isTelegramUser ? "opacity-75 cursor-not-allowed" : ""
+                      }`}
                     />
                   </label>
 
@@ -332,7 +347,10 @@ export function PackageDetailPage() {
                       value={phone}
                       onChange={(event) => setPhone(event.target.value)}
                       placeholder="+998 90 123 45 67"
-                      className="rounded-2xl border border-white/30 bg-white/10 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-white"
+                      readOnly={isTelegramUser}
+                      className={`rounded-2xl border border-white/30 bg-white/10 px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-white ${
+                        isTelegramUser ? "opacity-75 cursor-not-allowed" : ""
+                      }`}
                     />
                   </label>
                 </div>
