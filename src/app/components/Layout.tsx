@@ -58,12 +58,6 @@ export function Layout() {
                   {t("nav.domestic")}
                 </Link>
                 <Link
-                  to="/international-travel"
-                  className="text-slate-700 hover:text-blue-600 transition-colors"
-                >
-                  {t("nav.international")}
-                </Link>
-                <Link
                   to="/custom-package"
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
                 >
@@ -71,11 +65,10 @@ export function Layout() {
                   {t("nav.customPackage")}
                 </Link>
                 <Link
-                  to="/combo-tours"
-                  className="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 font-semibold"
+                  to="/international-travel"
+                  className="text-slate-700 hover:text-blue-600 transition-colors"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  Combo Tours
+                  {t("nav.international")}
                 </Link>
                 <Link
                   to="/menu"
@@ -173,13 +166,6 @@ export function Layout() {
                 {t("nav.domestic")}
               </Link>
               <Link
-                to="/international-travel"
-                className="block text-slate-700 hover:text-blue-600 py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {t("nav.international")}
-              </Link>
-              <Link
                 to="/custom-package"
                 className="block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg mt-2"
                 onClick={() => setIsMenuOpen(false)}
@@ -187,11 +173,11 @@ export function Layout() {
                 {t("nav.customPackage")}
               </Link>
               <Link
-                to="/combo-tours"
-                className="block bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 font-semibold px-4 py-2 rounded-lg mt-2"
+                to="/international-travel"
+                className="block text-slate-700 hover:text-blue-600 py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                ✨ Combo Tours
+                {t("nav.international")}
               </Link>
               <Link
                 to="/menu"
