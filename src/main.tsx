@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./app/App.tsx";
+import App from "./app/App";
 import { AdminAuthProvider } from "./app/contexts/AdminAuthContext";
 import { AuthProvider } from "./app/contexts/AuthContext";
 import "./styles/index.css";
