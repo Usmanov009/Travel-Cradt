@@ -105,7 +105,7 @@ export function HomePage() {
                     </div>
                   </div>
                   <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 leading-snug">
-                    {t("hero.combo")}
+                    Combo Tours
                   </h2>
                   <p className="text-xs sm:text-sm text-amber-100 mb-3 sm:mb-5 line-clamp-2 max-w-xs">
                     {t("hero.comboDesc")}
@@ -158,7 +158,7 @@ export function HomePage() {
                     </div>
                   </div>
                   <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 leading-snug">
-                    {t("hero.rentals")}
+                    Ijara menusi
                   </h2>
                   <p className="text-xs sm:text-sm text-emerald-100 mb-3 sm:mb-5 line-clamp-2 max-w-xs">
                     {t("hero.rentalsDesc")}
