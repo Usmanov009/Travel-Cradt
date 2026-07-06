@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Home, MapPin, Globe2, Sparkles, LayoutGrid } from "lucide-react";
 
 const items = [
-  { to: "/", labelKey: "nav.home", icon: Home, end: true },
-  { to: "/domestic-travel", labelKey: "nav.domestic", icon: MapPin },
-  { to: "/custom-package", labelKey: "nav.customPackage", icon: Sparkles },
-  { to: "/international-travel", labelKey: "nav.international", icon: Globe2 },
-  { to: "/menu", labelKey: "menu.title", icon: LayoutGrid },
+  { to: "/", labelKey: "bottomNav.home", icon: Home, end: true },
+  { to: "/domestic-travel", labelKey: "bottomNav.domestic", icon: MapPin },
+  { to: "/custom-package", labelKey: "bottomNav.customPackage", icon: Sparkles },
+  { to: "/international-travel", labelKey: "bottomNav.international", icon: Globe2 },
+  { to: "/menu", labelKey: "bottomNav.menu", icon: LayoutGrid },
 ];
 
 export function BottomNav() {
@@ -22,13 +22,15 @@ export function BottomNav() {
             to={to}
             end={end}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition-colors ${
+              `flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] sm:text-[11px] font-medium transition-colors ${
                 isActive ? "text-blue-600" : "text-slate-500"
               }`
             }
           >
-            <Icon className="w-5 h-5" />
-            <span className="truncate max-w-[64px]">{t(labelKey)}</span>
+            <Icon className="w-5 h-5 shrink-0" />
+            <span className="text-center leading-tight max-w-[68px] line-clamp-2">
+              {t(labelKey)}
+            </span>
           </NavLink>
         ))}
       </div>

@@ -105,14 +105,24 @@ function escMd(text) {
   return String(text).replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
 }
 
-function mainMenuKeyboard() {
-  const url = getWebAppUrl();
+function categoryGridKeyboard() {
   return Markup.inlineKeyboard([
-    [Markup.button.webApp('🌐 Web Ilovani ochish', url)],
     [
       Markup.button.callback('🏛 Ichki turlar', 'cat_domestic'),
       Markup.button.callback('🌏 Xalqaro turlar', 'cat_international'),
     ],
+    [
+      Markup.button.callback('✨ Combo turlar', 'cat_combo'),
+      Markup.button.callback('🏠 Ijaralar', 'cat_rentals'),
+    ],
+  ]);
+}
+
+function mainMenuKeyboard() {
+  const url = getWebAppUrl();
+  return Markup.inlineKeyboard([
+    [Markup.button.webApp('🌐 Web Ilovani ochish', url)],
+    ...categoryGridKeyboard().reply_markup.inline_keyboard,
     [Markup.button.callback('🤖 AI Maslahat', 'ai_start')],
     [Markup.button.callback('❓ Yordam', 'help')],
   ]);
@@ -235,10 +245,7 @@ function createBot() {
       '📦 *Qaysi tur kategoriyasini ko\'rmoqchisiz?*',
       {
         parse_mode: 'MarkdownV2',
-        ...Markup.inlineKeyboard([
-          [Markup.button.callback("🏛 Ichki turlar (O'zbekiston)", 'cat_domestic')],
-          [Markup.button.callback('🌏 Xalqaro turlar', 'cat_international')],
-        ]),
+        ...categoryGridKeyboard(),
       }
     );
   });
@@ -284,6 +291,43 @@ function createBot() {
     if (!isRegistered) return;
     await ctx.answerCbQuery();
     await showPackageList(ctx, 'international');
+  });
+
+  bot.action('cat_combo', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
+    await ctx.answerCbQuery();
+    const url = getWebAppUrl();
+    await ctx.reply(
+      '✨ *Combo turlar*\n\nBitta safarda ikki mamlakat — premium marshrutlar\\.',
+      {
+        parse_mode: 'MarkdownV2',
+        ...Markup.inlineKeyboard([
+          [Markup.button.webApp('🔍 Combo turlarni ko\'rish', `${url}/combo-tours`)],
+          [Markup.button.callback('🏠 Bosh menyu', 'main_menu')],
+        ]),
+      }
+    );
+  });
+
+  bot.action('cat_rentals', async (ctx) => {
+    const isRegistered = await checkUserRegistration(ctx);
+    if (!isRegistered) return;
+    await ctx.answerCbQuery();
+    const url = getWebAppUrl();
+    await ctx.reply(
+      '🏠 *Ijaralar*\n\nUy, kvartira yoki avtomobil ijarasi\\.',
+      {
+        parse_mode: 'MarkdownV2',
+        ...Markup.inlineKeyboard([
+          [
+            Markup.button.webApp('🏠 Uy ijarasi', `${url}/house-rent`),
+            Markup.button.webApp('🚗 Mashina', `${url}/car-rent`),
+          ],
+          [Markup.button.callback('🏠 Bosh menyu', 'main_menu')],
+        ]),
+      }
+    );
   });
 
   bot.action('ai_start', async (ctx) => {
@@ -415,7 +459,7 @@ function createBot() {
 
       await ctx.reply(reply, {
         ...Markup.inlineKeyboard([
-          [Markup.button.callback('🏛 Ichki turlar', 'cat_domestic'), Markup.button.callback('🌏 Xalqaro turlar', 'cat_international')],
+          ...categoryGridKeyboard().reply_markup.inline_keyboard,
           [Markup.button.webApp('🌐 Web Ilovani ochish', getWebAppUrl())],
         ]),
       });

@@ -11,6 +11,10 @@ const resources = {
         domesticDesc: "O'zbekistonning eng go'zal joylarini kashf eting.",
         international: "Tashqi Sayohat",
         internationalDesc: "Dunyo bo'ylab ajoyib joylarni kashf eting.",
+        combo: "Combo Turlar",
+        comboDesc: "Bitta safarda ikki mamlakat — premium marshrutlar.",
+        rentals: "Ijaralar",
+        rentalsDesc: "Uy, kvartira va avtomobil ijarasi.",
       },
       nav: {
         home: "Bosh sahifa",
@@ -18,6 +22,13 @@ const resources = {
         international: "Tashqi Sayohat",
         customPackage: "O'z Paketni Topish",
         dashboard: "Kabinet",
+      },
+      bottomNav: {
+        home: "Home",
+        domestic: "Ichki",
+        customPackage: "O'z Paketni Topish",
+        international: "Tashqi",
+        menu: "Menu",
       },
       domestic: {
         title: "O'zbekiston bo'ylab Sayohatlar",
@@ -281,6 +292,10 @@ const resources = {
         domesticDesc: "Исследуйте самые красивые места Узбекистана.",
         international: "Международные Путешествия",
         internationalDesc: "Откройте для себя удивительные направления по всему миру.",
+        combo: "Комбо Туры",
+        comboDesc: "Две страны в одной поездке — премиум маршруты.",
+        rentals: "Аренда",
+        rentalsDesc: "Аренда домов, квартир и автомобилей.",
       },
       nav: {
         home: "Главная",
@@ -288,6 +303,13 @@ const resources = {
         international: "Международные",
         customPackage: "Найти Свой Пакет",
         dashboard: "Кабинет",
+      },
+      bottomNav: {
+        home: "Home",
+        domestic: "Внутр.",
+        customPackage: "Свой Пакет",
+        international: "Междун.",
+        menu: "Меню",
       },
       domestic: {
         title: "Путешествия по Узбекистану",
@@ -551,6 +573,10 @@ const resources = {
         domesticDesc: "Explore the most beautiful destinations in Uzbekistan.",
         international: "International Travel",
         internationalDesc: "Discover amazing destinations around the world.",
+        combo: "Combo Tours",
+        comboDesc: "Two countries in one trip — premium routes.",
+        rentals: "Rentals",
+        rentalsDesc: "Houses, apartments, and car rentals.",
       },
       nav: {
         home: "Home",
@@ -558,6 +584,13 @@ const resources = {
         international: "International",
         customPackage: "Find My Package",
         dashboard: "Dashboard",
+      },
+      bottomNav: {
+        home: "Home",
+        domestic: "Domestic",
+        customPackage: "Find Package",
+        international: "Intl.",
+        menu: "Menu",
       },
       domestic: {
         title: "Travel Across Uzbekistan",
