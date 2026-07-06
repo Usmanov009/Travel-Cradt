@@ -5,7 +5,7 @@ import { usePackages } from "../hooks/usePackages";
 import {
   MapPin, Plane, Globe2, Mountain, Building2, Palmtree,
   Sparkles, ShieldCheck, Headphones, BadgeDollarSign,
-  Star, Users, Flag, Compass,
+  Star, Users, Flag, Compass, Home, Car,
 } from "lucide-react";
 import type { TravelPackage } from "../data/packages";
 import { getAppLang } from "../utils/locale";
@@ -16,6 +16,9 @@ import { ComboTourCard } from "../components/ComboTourCard";
 
 const HERO_DOMESTIC_IMAGE = PACKAGE_MEDIA["domestic-1"].cover;
 const HERO_INTERNATIONAL_IMAGE = PACKAGE_MEDIA["international-2"].cover;
+const HERO_COMBO_IMAGE = COMBO_TOURS[0].images[0];
+const HERO_RENTAL_IMAGE =
+  "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=80&auto=format";
 
 export function HomePage() {
   const { t, i18n } = useTranslation();
@@ -61,8 +64,8 @@ export function HomePage() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6 max-w-5xl mx-auto">
-            {/* ── Domestic banner ── */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 md:gap-6 max-w-5xl mx-auto">
+            {/* ── Combo tours banner ── */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -70,8 +73,114 @@ export function HomePage() {
               className="group"
             >
               <Link
+                to="/combo-tours"
+                className="relative flex min-h-[220px] sm:min-h-[280px] md:min-h-[320px] flex-col justify-end overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-amber-500/40 transition-all duration-500"
+              >
+                <div className="absolute inset-0 overflow-hidden group-hover:scale-105 transition-transform duration-700">
+                  <PackageImage
+                    src={HERO_COMBO_IMAGE}
+                    alt="Combo turlar"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-amber-500/75 via-orange-600/80 to-slate-900/95" />
+                </div>
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
+                  <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-white/30">
+                    <Sparkles className="w-3 h-3" /> Premium
+                  </span>
+                </div>
+                <div className="relative z-10 p-4 sm:p-6 md:p-9 text-white">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2.5 sm:mb-4">
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-2 py-1 sm:px-3 sm:py-1.5 text-xs">
+                      <Globe2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span>{COMBO_TOURS.length} ta tur</span>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-2 py-1 sm:px-3 sm:py-1.5 text-xs">
+                      <Plane className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span>2 mamlakat</span>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-2 py-1 sm:px-3 sm:py-1.5 text-xs">
+                      <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-yellow-300 text-yellow-300" />
+                      <span>4.9</span>
+                    </div>
+                  </div>
+                  <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 leading-snug">
+                    {t("hero.combo")}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-amber-100 mb-3 sm:mb-5 line-clamp-2 max-w-xs">
+                    {t("hero.comboDesc")}
+                  </p>
+                  <div className="inline-flex items-center gap-2 bg-white text-amber-700 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full font-semibold text-xs sm:text-sm group-hover:gap-3 transition-all w-fit">
+                    Ko'rish
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* ── Rentals banner ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.35 }}
+              className="group"
+            >
+              <Link
+                to="/menu"
+                className="relative flex min-h-[220px] sm:min-h-[280px] md:min-h-[320px] flex-col justify-end overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-emerald-500/40 transition-all duration-500"
+              >
+                <div className="absolute inset-0 overflow-hidden group-hover:scale-105 transition-transform duration-700">
+                  <PackageImage
+                    src={HERO_RENTAL_IMAGE}
+                    alt="Ijaralar"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/75 via-teal-600/80 to-slate-900/95" />
+                </div>
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
+                  <span className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-white/30">
+                    <Home className="w-3 h-3" /> Ijara
+                  </span>
+                </div>
+                <div className="relative z-10 p-4 sm:p-6 md:p-9 text-white">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2.5 sm:mb-4">
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-2 py-1 sm:px-3 sm:py-1.5 text-xs">
+                      <Home className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span>Uy ijarasi</span>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-2 py-1 sm:px-3 sm:py-1.5 text-xs">
+                      <Car className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span>Mashina</span>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-1.5 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-2 py-1 sm:px-3 sm:py-1.5 text-xs">
+                      <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-yellow-300 text-yellow-300" />
+                      <span>4.8</span>
+                    </div>
+                  </div>
+                  <h2 className="text-lg sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2 leading-snug">
+                    {t("hero.rentals")}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-emerald-100 mb-3 sm:mb-5 line-clamp-2 max-w-xs">
+                    {t("hero.rentalsDesc")}
+                  </p>
+                  <div className="inline-flex items-center gap-2 bg-white text-emerald-700 px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-full font-semibold text-xs sm:text-sm group-hover:gap-3 transition-all w-fit">
+                    Ko'rish
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* ── Domestic banner ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.5 }}
+              className="group"
+            >
+              <Link
                 to="/domestic-travel"
-                className="relative flex min-h-[300px] sm:min-h-[320px] md:min-h-[380px] flex-col justify-end overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-cyan-500/40 transition-all duration-500"
+                className="relative flex min-h-[220px] sm:min-h-[280px] md:min-h-[320px] flex-col justify-end overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-cyan-500/40 transition-all duration-500"
               >
                 {/* Background photo + gradient overlay */}
                 <div className="absolute inset-0 overflow-hidden group-hover:scale-105 transition-transform duration-700">
@@ -123,12 +232,12 @@ export function HomePage() {
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.35 }}
+              transition={{ duration: 0.7, delay: 0.65 }}
               className="group"
             >
               <Link
                 to="/international-travel"
-                className="relative flex min-h-[300px] sm:min-h-[320px] md:min-h-[380px] flex-col justify-end overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-pink-500/40 transition-all duration-500"
+                className="relative flex min-h-[220px] sm:min-h-[280px] md:min-h-[320px] flex-col justify-end overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-pink-500/40 transition-all duration-500"
               >
                 {/* Background photo + gradient overlay */}
                 <div className="absolute inset-0 overflow-hidden group-hover:scale-105 transition-transform duration-700">
