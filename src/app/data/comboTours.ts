@@ -1,4 +1,5 @@
 export type ComboCategory =
+  | "domestic"
   | "europe"
   | "asia"
   | "middle-east"
@@ -35,6 +36,7 @@ const u = (id: string, w = 800, h = 600) =>
   `https://images.unsplash.com/${id}?w=${w}&h=${h}&fit=crop&q=80&auto=format`;
 
 export const COMBO_CATEGORY_LABELS: Record<ComboCategory, string> = {
+  domestic: "Ichki",
   europe: "Yevropa",
   asia: "Osiyo",
   "middle-east": "Yaqin Sharq",
@@ -46,6 +48,81 @@ export const COMBO_CATEGORY_LABELS: Record<ComboCategory, string> = {
 };
 
 export const COMBO_TOURS: ComboTour[] = [
+  {
+    id: 7,
+    slug: "tashkent-samarkand-golden-route",
+    title: "Oltin Yo'l: Toshkent & Samarqand",
+    description:
+      "Zamonaviy poytaxtdan qadimiy Samarqandgacha — O'zbekistonning ikkita eng muhim shahrida tarixiy sayohat.",
+    vibe: "Qadimiy tarix va zamonaviy shahar hayoti uyg'unlashgan ichki sayohat.",
+    duration: "5 kun",
+    days: 5,
+    price: 350,
+    rating: 4.9,
+    categories: ["domestic", "family"],
+    countries: [
+      { name: "Toshkent", flag: "🇺🇿", image: u("photo-1548013146-72479768bada") },
+      { name: "Samarqand", flag: "🇺🇿", image: u("photo-1568605117036-5fe5e7bab0b7") },
+    ],
+    highlights: [
+      "Registon maydoni va Amir Temur maqbarasi",
+      "Toshkentdagi Chorsu bozori",
+      "Samarqanddagi Shohi-Zinda ansambli",
+      "Milliy ta'mlar va madaniy dasturlar",
+    ],
+    included: ["Transport", "Mehmonxonalar", "Nonushta", "Gid xizmati", "Muzey kirishlari"],
+    images: [u("photo-1548013146-72479768bada"), u("photo-1568605117036-5fe5e7bab0b7")],
+  },
+  {
+    id: 8,
+    slug: "bukhara-khiva-silk-road",
+    title: "Ipak Yo'li: Buxoro & Xiva",
+    description:
+      "Ochiq osmon muzeyi Buxorodan qadimiy Xiva qal'asigacha — Ipak yo'lining eng go'zal ikki manzili.",
+    vibe: "Qadimiy devorlar, karvonsaroylar va sharqona mehmondo'stlik.",
+    duration: "6 kun",
+    days: 6,
+    price: 420,
+    rating: 4.8,
+    categories: ["domestic", "adventure"],
+    countries: [
+      { name: "Buxoro", flag: "🇺🇿", image: u("photo-1548013146-72479768bada") },
+      { name: "Xiva", flag: "🇺🇿", image: u("photo-1568605117036-5fe5e7bab0b7") },
+    ],
+    highlights: [
+      "Ichan-Qala qal'asi ichida sayohat",
+      "Buxorodagi Kalyon minorasi",
+      "Sharqona hammom va spa dasturlari",
+      "Milliy konsert va ashula dasturlari",
+    ],
+    included: ["Transport", "Mehmonxonalar", "Nonushta", "Gid xizmati", "Konsertlar"],
+    images: [u("photo-1548013146-72479768bada"), u("photo-1568605117036-5fe5e7bab0b7")],
+  },
+  {
+    id: 9,
+    slug: "uzbekistan-grand-tour",
+    title: "O'zbekiston Katta Sayohati",
+    description:
+      "Toshkentdan Samarqand, Buxoro va Xivagacha — bitta safarda O'zbekistonning barcha tarixiy shaharlari.",
+    vibe: "Mukammal tarixiy sayohat va madaniy immersiya.",
+    duration: "10 kun",
+    days: 10,
+    price: 750,
+    rating: 4.9,
+    categories: ["domestic", "luxury"],
+    countries: [
+      { name: "Toshkent", flag: "🇺🇿", image: u("photo-1548013146-72479768bada") },
+      { name: "Samarqand", flag: "🇺🇿", image: u("photo-1568605117036-5fe5e7bab0b7") },
+    ],
+    highlights: [
+      "4 ta tarixiy shahar bo'ylab to'liq sayohat",
+      "VIP mehmonxonalar va hashamatli transport",
+      "Xususiy gidlar va maxsus dasturlar",
+      "Milliy oshxona va madaniy kechalar",
+    ],
+    included: ["VIP Transport", "5-yulduz mehmonxonalar", "Nonushta", "Xususiy gid", "Barcha kirishlar"],
+    images: [u("photo-1548013146-72479768bada"), u("photo-1568605117036-5fe5e7bab0b7")],
+  },
   {
     id: 1,
     slug: "turkey-greece-mediterranean",
