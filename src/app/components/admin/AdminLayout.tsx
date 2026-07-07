@@ -2,7 +2,9 @@ import React, { useContext, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 
-const superAdminNav = [
+type NavItem = { to: string; label: string; icon: string; exact?: boolean };
+
+const superAdminNav: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: '📊', exact: true },
   { to: '/admin/packages', label: 'Turlar', icon: '🌍' },
   { to: '/admin/bookings', label: 'Bronlar', icon: '📋' },
@@ -13,7 +15,7 @@ const superAdminNav = [
   { to: '/admin/admin-accounts', label: 'Admin Boshqaruvi', icon: '🔑' },
 ];
 
-const companyAdminNav = [
+const companyAdminNav: NavItem[] = [
   { to: '/admin/packages', label: 'Mening turlarim', icon: '🌍' },
   { to: '/admin/bookings', label: 'Bronlar', icon: '📋' },
 ];
