@@ -38,7 +38,7 @@ export function DomesticTravelPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-12 md:py-20">
+      <div className="bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] text-white py-12 md:py-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-3 mb-4">
             <MapPin className="w-6 h-6 md:w-8 md:h-8 shrink-0" />

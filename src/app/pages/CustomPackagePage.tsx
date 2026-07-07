@@ -804,8 +804,8 @@ export function CustomPackagePage() {
                 }
                 className={`p-6 rounded-[2rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg ${
                   formData.destinationType === "domestic"
-                    ? "border-transparent bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg"
-                    : "border-slate-200 text-slate-700"
+                    ? "border-transparent bg-gradient-to-br from-[#1E3A8A] to-[#06B6D4] text-white shadow-lg"
+                    : "border-[#1E3A8A]/10 text-[#1E3A8A]"
                 }`}
               >
                 <MapPin className={`w-8 h-8 mb-3 ${formData.destinationType === "domestic" ? "text-white" : "text-blue-600"}`} />
@@ -820,8 +820,8 @@ export function CustomPackagePage() {
                 }
                 className={`p-6 rounded-[2rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg ${
                   formData.destinationType === "international"
-                    ? "border-transparent bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg"
-                    : "border-slate-200 text-slate-700"
+                    ? "border-transparent bg-gradient-to-br from-[#06B6D4] to-[#1E3A8A] text-white shadow-lg"
+                    : "border-[#1E3A8A]/10 text-[#1E3A8A]"
                 }`}
               >
                 <Sparkles className={`w-8 h-8 mb-3 ${formData.destinationType === "international" ? "text-white" : "text-purple-600"}`} />
@@ -861,7 +861,7 @@ export function CustomPackagePage() {
                       />
                       <button
                         onClick={handleUseCurrentLocation}
-                        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-white shadow-lg shadow-cyan-300/30 hover:from-blue-700 hover:to-cyan-600 transition"
+                        className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] px-5 py-3 text-white shadow-lg shadow-[#06B6D4]/30 hover:from-[#1E40AF] hover:to-[#0891B2] transition"
                       >
                         {t("customPackage.useLocation")}
                       </button>
@@ -917,10 +917,10 @@ export function CustomPackagePage() {
 
                 {/* AI Destination Info Card */}
                 {(destInfoLoading || destInfo) && selectedDestination && (
-                  <div className="rounded-[2rem] border border-blue-100 bg-gradient-to-br from-blue-50 to-purple-50 p-5">
+                  <div className="rounded-[2rem] border border-[#06B6D4]/10 bg-gradient-to-br from-[#E5E7EB] to-[#DBEAFE] p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-semibold text-purple-700">{t("chat.aiInfo")}</span>
+                      <Sparkles className="w-4 h-4 text-[#1E3A8A]" />
+                      <span className="text-sm font-semibold text-[#1E3A8A]">{t("chat.aiInfo")}</span>
                     </div>
                     {destInfoLoading ? (
                       <div className="flex items-center gap-2 text-slate-500 text-sm">
@@ -1310,9 +1310,9 @@ export function CustomPackagePage() {
 
             {/* Marshrut ko'rsatish */}
             {(userCity || destinationLabel) && (
-              <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl px-5 py-3">
+              <div className="flex items-center gap-3 bg-gradient-to-r from-[#E5E7EB] to-[#DBEAFE] border border-[#06B6D4]/10 rounded-2xl px-5 py-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-[#06B6D4] flex-shrink-0" />
                   <span className="font-semibold text-slate-800 truncate">
                     {userCity || "Joylashuv aniqlanmadi"}
                   </span>
@@ -1365,8 +1365,8 @@ export function CustomPackagePage() {
                       isBlocked
                         ? "border-slate-100 bg-slate-50 opacity-45 cursor-not-allowed grayscale"
                         : selected
-                        ? "border-transparent bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg"
-                        : "border-slate-200 text-slate-700 bg-white hover:-translate-y-0.5 hover:shadow-lg"
+                        ? "border-transparent bg-gradient-to-br from-[#1E3A8A] to-[#06B6D4] text-white shadow-lg"
+                        : "border-[#1E3A8A]/10 text-[#1E3A8A]"
                     }`}
                   >
                     {isBlocked && (
@@ -1425,9 +1425,9 @@ export function CustomPackagePage() {
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">
               {t("customPackage.step8")}
             </h2>
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8">
+            <div className="bg-gradient-to-br from-[#E5E7EB] to-[#DBEAFE] rounded-2xl p-8">
               <div className="text-center mb-8">
-                <Sparkles className="w-16 h-16 mx-auto mb-4 text-purple-600" />
+                <Sparkles className="w-16 h-16 mx-auto mb-4 text-[#1E3A8A]" />
                 {aiLoading && (
                   <div className="space-y-2">
                     <p className="text-lg text-slate-600">{t("customPackage.aiGenerating")}</p>
@@ -1539,7 +1539,7 @@ export function CustomPackagePage() {
 
               <button
                 onClick={handleFindMatches}
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white py-4 rounded-[1.5rem] hover:shadow-xl transition-all font-semibold text-lg flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] text-white py-4 rounded-[1.5rem] hover:shadow-xl transition-all font-semibold text-lg flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-5 h-5" />
                 {t("customPackage.generate")}
@@ -1555,10 +1555,10 @@ export function CustomPackagePage() {
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-10 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#F5F5F4] via-[#E5E7EB] to-[#DBEAFE] py-10 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] text-white px-5 py-2 rounded-full mb-3 text-sm font-semibold shadow-lg">
               <Building className="w-4 h-4" /> {t("customPackage.matchesLabel")}
             </div>
             <h1 className="text-2xl md:text-3xl font-bold">{t("customPackage.matchesTitle")}</h1>
@@ -1611,12 +1611,12 @@ export function CustomPackagePage() {
 
   if (!planSelected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-sky-50 to-cyan-100 py-12 relative overflow-hidden">
-        <div className="pointer-events-none absolute right-0 top-16 h-72 w-72 rounded-full bg-cyan-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute left-0 bottom-24 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
+      <div className="min-h-screen bg-gradient-to-br from-[#F5F5F4] via-[#E5E7EB] to-[#DBEAFE] py-12 relative overflow-hidden">
+        <div className="pointer-events-none absolute right-0 top-16 h-72 w-72 rounded-full bg-[#06B6D4]/20 blur-3xl" />
+        <div className="pointer-events-none absolute left-0 bottom-24 h-64 w-64 rounded-full bg-[#1E3A8A]/20 blur-3xl" />
         <div className="container mx-auto px-4 max-w-4xl relative">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-5 py-2 rounded-full mb-4 shadow-lg text-sm font-semibold">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] text-white px-5 py-2 rounded-full mb-4 shadow-lg text-sm font-semibold">
               <Sparkles className="w-4 h-4" />
               Tur Yaratish
             </div>
@@ -1684,7 +1684,7 @@ export function CustomPackagePage() {
         </div>
 
         <div className="text-center mb-8 md:mb-12">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-4 sm:px-6 py-2 rounded-full mb-4 shadow-lg shadow-cyan-200/40 text-sm sm:text-base">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] text-white px-4 sm:px-6 py-2 rounded-full mb-4 shadow-lg shadow-[#06B6D4]/20 text-sm sm:text-base">
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="font-semibold">{t("customPackage.pageLabel")}</span>
           </div>
@@ -1705,9 +1705,9 @@ export function CustomPackagePage() {
               {Math.round((currentStep / totalSteps) * 100)}%
             </span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-2">
+          <div className="w-full bg-[#E5E7EB] rounded-full h-2">
             <motion.div
-              className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full"
+              className="bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] h-2 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
               transition={{ duration: 0.3 }}

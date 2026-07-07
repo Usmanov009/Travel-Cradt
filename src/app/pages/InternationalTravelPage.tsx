@@ -60,32 +60,32 @@ export function InternationalTravelPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-12 md:py-20">
+      <div className="bg-gradient-to-r from-[#06B6D4] to-[#1E3A8A] text-white py-12 md:py-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-3 mb-4">
             <Globe2 className="w-6 h-6 md:w-8 md:h-8 shrink-0" />
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">{t("international.title")}</h1>
           </div>
-          <p className="text-base sm:text-xl text-purple-100 max-w-2xl">
+          <p className="text-base sm:text-xl text-[#E5E7EB] max-w-2xl">
             {t("hero.internationalDesc")}
           </p>
         </div>
       </div>
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="bg-[#F5F5F4] rounded-2xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-[#6B7280]" />
               <input
                 type="text"
                 placeholder="Search by destination or country..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+                className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-[#1E3A8A]/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#06B6D4] text-sm sm:text-base"
               />
             </div>
-            <button className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors text-sm sm:text-base">
+            <button className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 border border-[#1E3A8A]/10 rounded-xl hover:bg-[#E5E7EB] transition-colors text-sm sm:text-base">
               <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Filters</span>
             </button>

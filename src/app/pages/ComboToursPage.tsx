@@ -24,11 +24,11 @@ export function ComboToursPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="relative bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950 text-white py-14 md:py-20 overflow-hidden">
-        <div className="pointer-events-none absolute -top-10 -right-10 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-10 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl" />
+      <div className="relative bg-gradient-to-br from-[#1E3A8A] via-[#1E3A8A] to-[#F59E0B] text-white py-14 md:py-20 overflow-hidden">
+        <div className="pointer-events-none absolute -top-10 -right-10 h-72 w-72 rounded-full bg-[#F59E0B]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 -left-10 h-64 w-64 rounded-full bg-[#06B6D4]/10 blur-3xl" />
         <div className="container mx-auto px-4 relative">
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 text-amber-300 px-4 py-1.5 rounded-full mb-4 text-sm font-semibold">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 text-[#F59E0B] px-4 py-1.5 rounded-full mb-4 text-sm font-semibold">
             <Sparkles className="w-4 h-4" />
             TripCraft eksklyuziv
           </div>
@@ -44,16 +44,16 @@ export function ComboToursPage() {
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="flex items-center gap-2 mb-4">
-          <LayoutGrid className="w-4 h-4 text-slate-400" />
-          <span className="text-sm text-slate-500">Kategoriya bo'yicha filtrlash</span>
+          <LayoutGrid className="w-4 h-4 text-[#6B7280]" />
+          <span className="text-sm text-[#6B7280]">Kategoriya bo'yicha filtrlash</span>
         </div>
         <div className="flex gap-2 sm:gap-3 mb-8 overflow-x-auto pb-2 -mx-1 px-1">
           <button
             onClick={() => setActiveCategory("all")}
             className={`px-4 sm:px-5 py-2 rounded-full whitespace-nowrap transition-all text-xs sm:text-sm font-semibold ${
               activeCategory === "all"
-                ? "bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 shadow-lg"
-                : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
+                ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white shadow-lg"
+                : "bg-[#F5F5F4] text-[#1E3A8A] hover:bg-[#E5E7EB] border border-[#1E3A8A]/10"
             }`}
           >
             Barchasi
@@ -64,8 +64,8 @@ export function ComboToursPage() {
               onClick={() => setActiveCategory(cat)}
               className={`px-4 sm:px-5 py-2 rounded-full whitespace-nowrap transition-all text-xs sm:text-sm font-semibold ${
                 activeCategory === cat
-                  ? "bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 shadow-lg"
-                  : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
+                  ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white shadow-lg"
+                  : "bg-[#F5F5F4] text-[#1E3A8A] hover:bg-[#E5E7EB] border border-[#1E3A8A]/10"
               }`}
             >
               {COMBO_CATEGORY_LABELS[cat]}
@@ -73,8 +73,8 @@ export function ComboToursPage() {
           ))}
         </div>
 
-        <p className="text-sm text-slate-500 mb-4">
-          <span className="font-semibold text-slate-800">{filteredTours.length}</span> ta Combo Tour topildi
+        <p className="text-sm text-[#6B7280] mb-4">
+          <span className="font-semibold text-[#1E3A8A]">{filteredTours.length}</span> ta Combo Tour topildi
         </p>
 
         {filteredTours.length === 0 ? (
