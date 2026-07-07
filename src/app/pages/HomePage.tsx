@@ -332,6 +332,41 @@ export function HomePage() {
         </div>
       </section>
 
+      {/* ── Popular International ── */}
+      <section className="py-12 md:py-20 bg-[#F5F5F4]">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 bg-gradient-to-r from-[#06B6D4] to-[#1E3A8A] bg-clip-text text-transparent">
+            {t("popular.international")}
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            {popularInternational.map((pkg, index) => (
+              <motion.div
+                key={pkg.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all"
+              >
+                <Link to={`/package/${pkg.type}/${pkg.id}`} className="block relative">
+                  <div className="aspect-[3/4] overflow-hidden">
+                    <PackageImage
+                      src={pkg.image}
+                      alt={getLocalTitle(pkg)}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-6 pointer-events-none text-white">
+                    <h3 className="text-xs sm:text-lg md:text-2xl font-bold text-white line-clamp-2 leading-relaxed">{getLocalTitle(pkg)}</h3>
+                    <p className="text-xs text-white/80 mt-1 line-clamp-1 hidden sm:block leading-relaxed">{getLocalVibe(pkg)}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Stats Strip ── */}
       <section className="py-10 md:py-16 bg-[#F5F5F4] border-b border-[#1E3A8A]/10">
         <div className="container mx-auto px-4">
@@ -501,41 +536,6 @@ export function HomePage() {
                 </div>
                 <h3 className="text-lg font-bold text-[#1E3A8A] mb-2">{feat.title}</h3>
                 <p className="text-sm text-[#6B7280] leading-relaxed">{feat.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Popular International ── */}
-      <section className="py-12 md:py-20 bg-gradient-to-br from-[#F5F5F4] to-[#E5E7EB]">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 bg-gradient-to-r from-[#06B6D4] to-[#1E3A8A] bg-clip-text text-transparent">
-            {t("popular.international")}
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {popularInternational.map((pkg, index) => (
-              <motion.div
-                key={pkg.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="group relative overflow-hidden rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all"
-              >
-                <Link to={`/package/${pkg.type}/${pkg.id}`} className="block relative">
-                  <div className="aspect-[3/4] overflow-hidden">
-                    <PackageImage
-                      src={pkg.image}
-                      alt={getLocalTitle(pkg)}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/75 to-transparent px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-6 pointer-events-none text-white">
-                    <h3 className="text-xs sm:text-lg md:text-2xl font-bold text-white line-clamp-2 leading-relaxed">{getLocalTitle(pkg)}</h3>
-                    <p className="text-xs text-white/80 mt-1 line-clamp-1 hidden sm:block leading-relaxed">{getLocalVibe(pkg)}</p>
-                  </div>
-                </Link>
               </motion.div>
             ))}
           </div>
