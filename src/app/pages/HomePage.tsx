@@ -414,20 +414,18 @@ export function HomePage() {
       </section>
 
       {/* ── Combo Tours (eksklyuziv) ── */}
-      <section className="py-14 md:py-20 bg-[#1E3A8A] relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-16 -right-16 h-80 w-80 rounded-full bg-[#F59E0B]/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-72 w-72 rounded-full bg-[#06B6D4]/10 blur-3xl" />
+      <section className="py-14 md:py-20 bg-[#F5F5F4] relative overflow-hidden">
         <div className="container mx-auto px-4 relative">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 md:mb-12">
             <div>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 text-[#F59E0B] px-3 py-1 rounded-full mb-3 text-xs sm:text-sm font-semibold">
+              <div className="inline-flex items-center gap-2 bg-[#1E3A8A]/10 backdrop-blur-md border border-[#1E3A8A]/20 text-[#F59E0B] px-3 py-1 rounded-full mb-3 text-xs sm:text-sm font-semibold">
                 <Sparkles className="w-3.5 h-3.5" />
                 TripCraft eksklyuziv
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1E3A8A]">
                 ✨ Combo Tours
               </h2>
-              <p className="text-white/60 mt-2 max-w-xl text-sm sm:text-base">
+              <p className="text-[#6B7280] mt-2 max-w-xl text-sm sm:text-base">
                 Bitta safarda ikkita davlat — oldindan tayyorlangan premium marshrutlar.
               </p>
             </div>
