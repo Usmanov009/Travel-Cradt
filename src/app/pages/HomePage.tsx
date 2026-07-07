@@ -448,39 +448,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── Combo Tours (eksklyuziv) ── */}
-      <section className="py-14 md:py-20 bg-[#F5F5F4] relative overflow-hidden">
-        <div className="container mx-auto px-4 relative">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 md:mb-12">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-[#1E3A8A]/10 backdrop-blur-md border border-[#1E3A8A]/20 text-[#F59E0B] px-3 py-1 rounded-full mb-3 text-xs sm:text-sm font-semibold">
-                <Sparkles className="w-3.5 h-3.5" />
-                TripCraft eksklyuziv
-              </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1E3A8A]">
-                ✨ Combo Tours
-              </h2>
-              <p className="text-[#6B7280] mt-2 max-w-xl text-sm sm:text-base">
-                Bitta safarda ikkita davlat — oldindan tayyorlangan premium marshrutlar.
-              </p>
-            </div>
-            <Link
-              to="/combo-tours"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white font-semibold px-5 py-2.5 rounded-xl hover:shadow-lg hover:shadow-[#F59E0B]/30 transition-all self-start sm:self-auto"
-            >
-              Barchasini ko'rish
-              <Compass className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6">
-            {COMBO_TOURS.slice(0, 3).map((tour) => (
-              <ComboTourCard key={tour.id} tour={tour} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── Why TravelCraft AI ── */}
       <section className="py-12 md:py-20 bg-[#F5F5F4]">
         <div className="container mx-auto px-4">
