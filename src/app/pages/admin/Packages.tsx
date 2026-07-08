@@ -4,7 +4,7 @@ import { adminFetch } from '../../services/adminApi';
 
 const emptyForm = {
   type: 'domestic', category: '', title: '', description: '',
-  image: '', duration: '', price: '', country: '', hotel: '',
+  image: '', duration: '', price: '', priceSum: '', country: '', hotel: '',
   flight_included: false, vibe: '', included: '', interests: '',
 };
 
@@ -71,6 +71,7 @@ export default function AdminPackages() {
       image: pkg.image || '',
       duration: pkg.duration || '',
       price: pkg.price || '',
+      priceSum: pkg.priceSum || '',
       country: pkg.country || '',
       hotel: pkg.hotel || '',
       flight_included: pkg.flight_included || false,
@@ -87,6 +88,7 @@ export default function AdminPackages() {
       const body = {
         ...form,
         price: parseFloat(form.price as string) || 0,
+        priceSum: parseFloat(form.priceSum as string) || 0,
         included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
         interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
       };
@@ -261,12 +263,21 @@ export default function AdminPackages() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kategoriya</label>
-                  <input
+                  <select
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.category}
                     onChange={e => setForm({...form, category: e.target.value})}
-                    placeholder="Masalan: Historical"
-                  />
+                  >
+                    <option value="">Tanlang...</option>
+                    <option value="historical">Tarixiy</option>
+                    <option value="nature">Tabiat</option>
+                    <option value="beach">Plyaj</option>
+                    <option value="adventure">Sarguzasht</option>
+                    <option value="culture">Madaniyat</option>
+                    <option value="business">Biznes</option>
+                    <option value="family">Oilaviy</option>
+                    <option value="luxury">Hashamatli</option>
+                  </select>
                 </div>
               </div>
 
@@ -324,14 +335,25 @@ export default function AdminPackages() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mehmonxona</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Narx (so'm)</label>
                   <input
+                    type="number"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.hotel}
-                    onChange={e => setForm({...form, hotel: e.target.value})}
-                    placeholder="Hotel Samarkand"
+                    value={form.priceSum || ''}
+                    onChange={e => setForm({...form, priceSum: e.target.value})}
+                    placeholder="3250000"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mehmonxona</label>
+                <input
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={form.hotel}
+                  onChange={e => setForm({...form, hotel: e.target.value})}
+                  placeholder="Hotel Samarkand"
+                />
               </div>
 
               <div>
