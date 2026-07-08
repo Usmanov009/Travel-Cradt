@@ -10,6 +10,13 @@ const defaultTourCompanies = [
     description: 'Ishonchli sayohatlaringiz uchun — mahalliy va xalqaro tur paketlari bo\'yicha yetakchi tur firma.',
     logo: '/images/dilrabo/dilrabo-logo.png',
   },
+  {
+    key: 'dilbar', name: 'Dilbar Travel', email: 'info@dilbartravel.uz',
+    phone: '+998 90 123 45 67', address: 'Tashkent, O\'zbekiston',
+    website: 'https://dilbartravel.uz',
+    description: 'Sifatli va qulay sayohatlar uchun — ichki va xalqaro turlar bo\'yicha professional tur operatori.',
+    logo: '/images/dilrabo/dilrabo-logo.png',
+  },
 ];
 
 const domesticPackages = [
