@@ -114,7 +114,7 @@ export function ComboTourDetailPage() {
       guests,
       days: tour.days,
       bookedAt: new Date().toISOString(),
-      image: tour.images[0],
+      image: tour.images?.[0] || "",
     };
 
     if (existingIndex !== -1) {

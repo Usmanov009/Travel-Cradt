@@ -16,7 +16,7 @@ import { ComboTourCard } from "../components/ComboTourCard";
 
 const HERO_DOMESTIC_IMAGE = PACKAGE_MEDIA["domestic-1"].cover;
 const HERO_INTERNATIONAL_IMAGE = PACKAGE_MEDIA["international-2"].cover;
-const HERO_COMBO_IMAGE = COMBO_TOURS[0].images[0];
+const HERO_COMBO_IMAGE = COMBO_TOURS[0]?.images[0] || "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&h=600&fit=crop&q=80&auto=format";
 const HERO_RENTAL_IMAGE =
   "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&q=80&auto=format";
 
