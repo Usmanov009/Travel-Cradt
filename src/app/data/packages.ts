@@ -30,68 +30,7 @@ export interface TravelPackage {
   };
 }
 
-export const domesticPackages: TravelPackage[] = [
-  {
-    id: 1,
-    type: "domestic",
-    category: "historical",
-    title: "Samarkand + Bukhara Heritage Tour",
-    description: "Discover two of Uzbekistan's most iconic Silk Road cities in one unforgettable trip",
-    image: "/images/dilrabo/samarqand-buxoro.jpg",
-    duration: "4 days / 3 nights",
-    price: 108,
-    rating: 4.9,
-    included: ["Hotel", "Transportation", "Guide"],
-    companyId: 1,
-    companyName: "Dilbar Travel",
-    companyLogo: "/images/dilrabo/dilrabo-logo.png",
-    vibe: "Walk through centuries of Silk Road history, from Samarkand's turquoise domes to Bukhara's ancient madrasahs.",
-    translations: {
-      uz: {
-        title: "Samarqand + Buxoro",
-        description: "O'zbekistonning eng mashhur ikkita Ipak Yo'li shahrini bir sayohatda kashf eting",
-        vibe: "1.290.000 so'mdan boshlab, 4 kun / 3 kecha.",
-        duration: "4 kun / 3 kecha",
-      },
-      ru: {
-        title: "Самарканд + Бухара",
-        description: "Откройте для себя два самых знаковых города Шёлкового пути Узбекистана за одну поездку",
-        vibe: "От 1 290 000 сум, 4 дня / 3 ночи.",
-        duration: "4 дня / 3 ночи",
-      },
-    },
-  },
-  {
-    id: 2,
-    type: "domestic",
-    category: "historical",
-    title: "Samarkand + Tashkent Discovery",
-    description: "A perfect short getaway combining the capital's modern charm with Samarkand's timeless beauty",
-    image: "/images/dilrabo/samarqand-toshkent.jpg",
-    duration: "3 days / 2 nights",
-    price: 73,
-    rating: 4.8,
-    included: ["Hotel", "Transportation", "Guide"],
-    companyId: 1,
-    companyName: "Dilbar Travel",
-    companyLogo: "/images/dilrabo/dilrabo-logo.png",
-    vibe: "From Tashkent's grand mosques to Samarkand's Gur-e-Amir mausoleum, a compact taste of Uzbekistan's heart.",
-    translations: {
-      uz: {
-        title: "Samarqand + Toshkent",
-        description: "Poytaxtning zamonaviy joziba va Samarqandning abadiy go'zalligini birlashtirgan mukammal qisqa sayohat",
-        vibe: "870.000 so'mdan boshlab, 3 kun / 2 kecha.",
-        duration: "3 kun / 2 kecha",
-      },
-      ru: {
-        title: "Самарканд + Ташкент",
-        description: "Идеальная короткая поездка, объединяющая современный шарм столицы и вечную красоту Самарканда",
-        vibe: "От 870 000 сум, 3 дня / 2 ночи.",
-        duration: "3 дня / 2 ночи",
-      },
-    },
-  },
-];
+export const domesticPackages: TravelPackage[] = [];
 
 export const internationalPackages: TravelPackage[] = [
   {

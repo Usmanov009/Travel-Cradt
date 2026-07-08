@@ -49,6 +49,56 @@ export const COMBO_CATEGORY_LABELS: Record<ComboCategory, string> = {
 
 export const COMBO_TOURS: ComboTour[] = [
   {
+    id: 10,
+    slug: "samarqand-buxoro-heritage",
+    title: "Samarqand + Buxoro",
+    description:
+      "O'zbekistonning eng mashhur ikkita Ipak Yo'li shahrini bir sayohatda kashf eting — qadimiy tarix va madaniyat.",
+    vibe: "Registon maydonidan Buxoro qal'asigacha — Ipak yo'lining eng yorqin ikki manzili.",
+    duration: "4 kun",
+    days: 4,
+    price: 108,
+    rating: 4.9,
+    categories: ["domestic", "family"],
+    countries: [
+      { name: "Samarqand", flag: "🇺🇿", image: u("photo-1568605117036-5fe5e7bab0b7") },
+      { name: "Buxoro", flag: "🇺🇿", image: u("photo-1548013146-72479768bada") },
+    ],
+    highlights: [
+      "Registon maydoni va Amir Temur maqbarasi",
+      "Buxorodagi Kalyon minorasi va Ark qal'asi",
+      "Shohi-Zinda ansambli va Chor-Bakr",
+      "Milliy ta'mlar va madaniy dasturlar",
+    ],
+    included: ["Transport", "Mehmonxonalar", "Nonushta", "Gid xizmati", "Muzey kirishlari"],
+    images: [u("photo-1568605117036-5fe5e7bab0b7"), u("photo-1548013146-72479768bada")],
+  },
+  {
+    id: 11,
+    slug: "samarqand-toshkent-discovery",
+    title: "Samarqand + Toshkent",
+    description:
+      "Poytaxtning zamonaviy joziba va Samarqandning abadiy go'zalligini birlashtirgan mukammal qisqa sayohat.",
+    vibe: "Toshkentning zamonaviy masjidlari va Samarqandning Gur-e-Amir maqbarasi — O'zbekiston yuragi.",
+    duration: "3 kun",
+    days: 3,
+    price: 73,
+    rating: 4.8,
+    categories: ["domestic", "family"],
+    countries: [
+      { name: "Toshkent", flag: "🇺🇿", image: u("photo-1548013146-72479768bada") },
+      { name: "Samarqand", flag: "🇺🇿", image: u("photo-1568605117036-5fe5e7bab0b7") },
+    ],
+    highlights: [
+      "Toshkentdagi Chorsu bozori va Xasti Imom majmuasi",
+      "Samarqanddagi Registon maydoni",
+      "Gur-e-Amir maqbarasi va Bibixonim masjidi",
+      "Milliy ta'mlar va madaniy dasturlar",
+    ],
+    included: ["Transport", "Mehmonxonalar", "Nonushta", "Gid xizmati"],
+    images: [u("photo-1548013146-72479768bada"), u("photo-1568605117036-5fe5e7bab0b7")],
+  },
+  {
     id: 7,
     slug: "tashkent-samarkand-golden-route",
     title: "Oltin Yo'l: Toshkent & Samarqand",
