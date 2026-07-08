@@ -256,7 +256,7 @@ export default function AdminPackages() {
                   >
                     <option value="domestic">Ichki (Domestic)</option>
                     <option value="international">Xalqaro (International)</option>
-                    <option value="combo">Combo (Combo)</option>
+                    <option value="combo">Combo</option>
                   </select>
                 </div>
                 <div>

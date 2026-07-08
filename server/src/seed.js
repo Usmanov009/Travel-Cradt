@@ -209,7 +209,7 @@ async function seed() {
     let companyAssignIndex = 0;
     for (const pkg of allPackages) {
       // The self-service "create your own package" placeholder isn't tied to a real tour firm
-      const companyKey = pkg.category === 'custom' ? null : companyKeys[companyAssignIndex++ % companyKeys.length];
+      const companyKey = pkg.category === 'combo' ? null : companyKeys[companyAssignIndex++ % companyKeys.length];
       const companyId = companyKey ? companyIdByKey[companyKey] : null;
 
       await client.query(

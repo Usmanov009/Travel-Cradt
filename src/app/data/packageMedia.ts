@@ -116,10 +116,10 @@ export function getCategoryImage(category: string): string | undefined {
 }
 
 export function getPackageImageByRef(
-  type: PackageType | "custom" | "combo",
+  type: PackageType | "combo",
   id: number,
 ): string | undefined {
-  if (type === "custom" || type === "combo") return PACKAGE_MEDIA["domestic-1"]?.cover;
+  if (type === "combo") return PACKAGE_MEDIA["domestic-1"]?.cover;
   const media = PACKAGE_MEDIA[packageMediaKey(type, id)];
   return media?.cover;
 }
