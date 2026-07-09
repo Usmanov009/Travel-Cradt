@@ -6,6 +6,7 @@ const emptyForm = {
   type: 'domestic', category: '', title: '', description: '',
   image: '', duration: '', price: '', priceSum: '', country: '', hotel: '',
   flight_included: false, vibe: '', included: '', interests: '',
+  destination1: '', destination2: '',
 };
 
 export default function AdminPackages() {
@@ -78,6 +79,8 @@ export default function AdminPackages() {
       vibe: pkg.vibe || '',
       included: (pkg.included || []).join(', '),
       interests: (pkg.interests || []).join(', '),
+      destination1: pkg.destination1 || '',
+      destination2: pkg.destination2 || '',
     });
     setShowForm(true);
   };
@@ -91,6 +94,8 @@ export default function AdminPackages() {
         priceSum: parseFloat(form.priceSum as string) || 0,
         included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
         interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
+        destination1: form.destination1 || null,
+        destination2: form.destination2 || null,
       };
       const path = editPkg ? `/packages/${editPkg.id}` : '/packages';
       const method = editPkg ? 'PUT' : 'POST';
@@ -322,6 +327,29 @@ export default function AdminPackages() {
                   />
                 </div>
               </div>
+
+              {form.type === 'combo' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 1 *</label>
+                    <input
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.destination1}
+                      onChange={e => setForm({...form, destination1: e.target.value})}
+                      placeholder="Samarqand"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 2 *</label>
+                    <input
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.destination2}
+                      onChange={e => setForm({...form, destination2: e.target.value})}
+                      placeholder="Buxoro"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
