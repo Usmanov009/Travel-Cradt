@@ -321,28 +321,20 @@ export default function AdminPackages() {
                 />
               </div>
 
+              {form.type !== 'combo' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={form.country}
+                    onChange={e => setForm({...form, country: e.target.value})}
+                    placeholder="Uzbekistan"
+                  />
+                </div>
+              )}
+
               {form.type === 'combo' && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 1 *</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={form.destination1}
-                        onChange={e => setForm({...form, destination1: e.target.value})}
-                        placeholder="Samarqand"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 2 *</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={form.destination2}
-                        onChange={e => setForm({...form, destination2: e.target.value})}
-                        placeholder="Buxoro"
-                      />
-                    </div>
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat 1 *</label>
@@ -360,6 +352,26 @@ export default function AdminPackages() {
                         value={form.country2}
                         onChange={e => setForm({...form, country2: e.target.value})}
                         placeholder="O'zbekiston"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 1 *</label>
+                      <input
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={form.destination1}
+                        onChange={e => setForm({...form, destination1: e.target.value})}
+                        placeholder="Samarqand"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 2 *</label>
+                      <input
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={form.destination2}
+                        onChange={e => setForm({...form, destination2: e.target.value})}
+                        placeholder="Buxoro"
                       />
                     </div>
                   </div>
