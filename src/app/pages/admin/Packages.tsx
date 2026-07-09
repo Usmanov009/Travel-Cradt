@@ -6,7 +6,7 @@ const emptyForm = {
   type: 'domestic', category: '', title: '', description: '',
   image: '', duration: '', price: '', priceSum: '', country: '', hotel: '',
   flight_included: false, vibe: '', included: '', interests: '',
-  destination1: '', destination2: '', country1: '', country2: '',
+  destination: '', destination1: '', destination2: '', country1: '', country2: '',
 };
 
 export default function AdminPackages() {
@@ -79,6 +79,7 @@ export default function AdminPackages() {
       vibe: pkg.vibe || '',
       included: (pkg.included || []).join(', '),
       interests: (pkg.interests || []).join(', '),
+      destination: pkg.destination || '',
       destination1: pkg.destination1 || '',
       destination2: pkg.destination2 || '',
       country1: pkg.country1 || '',
@@ -96,6 +97,7 @@ export default function AdminPackages() {
         priceSum: parseFloat(form.priceSum as string) || 0,
         included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
         interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
+        destination: form.destination || null,
         destination1: form.destination1 || null,
         destination2: form.destination2 || null,
         country1: form.country1 || null,
@@ -321,15 +323,38 @@ export default function AdminPackages() {
                 />
               </div>
 
-              {form.type !== 'combo' && (
+              {form.type === 'domestic' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
                   <input
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.country}
-                    onChange={e => setForm({...form, country: e.target.value})}
-                    placeholder="Uzbekistan"
+                    value={form.destination}
+                    onChange={e => setForm({...form, destination: e.target.value})}
+                    placeholder="Samarqand"
                   />
+                </div>
+              )}
+
+              {form.type === 'international' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
+                    <input
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.destination}
+                      onChange={e => setForm({...form, destination: e.target.value})}
+                      placeholder="Parij"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat</label>
+                    <input
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.country}
+                      onChange={e => setForm({...form, country: e.target.value})}
+                      placeholder="Fransiya"
+                    />
+                  </div>
                 </div>
               )}
 
