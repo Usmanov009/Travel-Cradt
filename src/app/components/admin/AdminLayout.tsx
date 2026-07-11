@@ -33,7 +33,7 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-gray-60">
       {/* Sidebar */}
       <aside
         className={`${collapsed ? 'w-16' : 'w-64'} bg-gradient-to-b from-blue-900 to-blue-800 text-white flex flex-col transition-all duration-200`}
