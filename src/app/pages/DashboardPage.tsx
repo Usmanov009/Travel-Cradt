@@ -1,4 +1,4 @@
-impo\$rt { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   ClipboardList, ArrowRight, Trash2, Pencil, Check,
@@ -304,7 +304,10 @@ export function DashboardPage() {
                 const cfg = TYPE_CONFIG[booking.type];
                 const coverImage =
                   booking.image ??
-                  getPackageImageByRef(booking.type, booking.id);
+                  getPackageImageByRef(
+                    booking.type as "domestic" | "international" | "combo",
+                    booking.id
+                  );
 
                 return (
                   <motion.div

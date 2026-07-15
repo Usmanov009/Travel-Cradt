@@ -38,12 +38,13 @@ export function PackageDetailPage() {
   useEffect(() => {
     if (!params.id) return;
     setPkgLoading(true);
-    fetch(`/api/packages/${params.id}`)
+    const typeQuery = params.type ? `?type=${encodeURIComponent(params.type)}` : '';
+    fetch(`/api/packages/${params.id}${typeQuery}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => setPackageData(data ? mapDbPackage(data) : null))
       .catch(() => setPackageData(null))
       .finally(() => setPkgLoading(false));
-  }, [params.id]);
+  }, [params.id, params.type]);
 
   useEffect(() => {
     if (!packageData) return;
@@ -131,6 +132,7 @@ export function PackageDetailPage() {
           title: packageData.title,
           type: packageData.type,
           price: finalPrice,
+          price_currency: packageData.priceCurrency,
           name: name.trim(),
           phone: phone.trim(),
           guests,

@@ -34,6 +34,7 @@ async function migrate() {
         title VARCHAR(255),
         type VARCHAR(50),
         price NUMERIC(10,2),
+        price_currency VARCHAR(10) DEFAULT 'USD',
         name VARCHAR(255),
         phone VARCHAR(50),
         guests INTEGER DEFAULT 1,

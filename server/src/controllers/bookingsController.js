@@ -18,8 +18,8 @@ async function getBookings(req, res) {
 
 async function createBooking(req, res) {
   try {
-    const { title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id } = req.body;
-    console.log('[createBooking]', { title, name, phone, guests, status, company_id: company_id ?? null, package_id: package_id ?? null });
+    const { title, type, price, price_currency, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id } = req.body;
+    console.log('[createBooking]', { title, name, phone, guests, status, company_id: company_id ?? null, package_id: package_id ?? null, price_currency: price_currency ?? 'USD' });
 
     let resolvedTelegramId = telegram_id || null;
     let finalName = name;
@@ -65,22 +65,24 @@ async function createBooking(req, res) {
       }
     } catch {}
 
+    const safeCurrency = (price_currency === 'UZS' || price_currency === 'USD') ? price_currency : 'USD';
+
     try {
       const { rows } = await pool.query(
-        `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        `INSERT INTO bookings (title, type, price, price_currency, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          RETURNING *`,
-        [title, type, price, finalName, finalPhone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId, package_id || null]
+        [title, type, price, safeCurrency, finalName, finalPhone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId, package_id || null]
       );
       console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId, 'telegram_id:', resolvedTelegramId, 'package_id:', package_id);
       return res.status(201).json(rows[0]);
     } catch (insertErr) {
       console.warn('[createBooking] full insert failed:', insertErr.message, '— trying fallback');
       const { rows } = await pool.query(
-        `INSERT INTO bookings (title, type, price, name, phone, guests, days, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        `INSERT INTO bookings (title, type, price, price_currency, name, phone, guests, days, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
          RETURNING *`,
-        [title, type, price, finalName, finalPhone, guests || 1, days || 1, status || 'pending']
+        [title, type, price, safeCurrency, finalName, finalPhone, guests || 1, days || 1, status || 'pending']
       );
       console.log('[createBooking] fallback saved id:', rows[0].id);
       return res.status(201).json(rows[0]);

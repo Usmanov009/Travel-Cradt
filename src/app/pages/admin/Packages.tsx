@@ -88,6 +88,14 @@ export default function AdminPackages() {
   };
 
   const save = async () => {
+    if (form.type === 'international' && !form.country) {
+      alert('Xalqaro tur uchun avval mamlakatni tanlang.');
+      return;
+    }
+    if (form.type === 'international' && form.country && !form.destination) {
+      alert('Xalqaro tur uchun mamlakat tanlangandan keyin manzilni kiriting.');
+      return;
+    }
     setSaving(true);
     try {
       const body = {
@@ -376,11 +384,15 @@ export default function AdminPackages() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
                     <input
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={!form.country}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                       value={form.destination}
                       onChange={e => setForm({...form, destination: e.target.value})}
-                      placeholder="Parij"
+                      placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
                     />
+                    {!form.country && (
+                      <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
+                    )}
                   </div>
                 </div>
               )}

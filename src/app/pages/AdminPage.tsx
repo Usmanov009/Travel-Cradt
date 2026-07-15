@@ -9,7 +9,7 @@ interface EnrichData {
 export function AdminPage() {
   const [packages, setPackages] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [form, setForm] = useState({ title: "", type: "domestic", price: "", description: "", image: "", country: "" });
+  const [form, setForm] = useState({ title: "", type: "domestic", price: "", price_currency: "USD", description: "", image: "", country: "" });
   const [enrich, setEnrich] = useState<EnrichData | null>(null);
   const [enrichLoading, setEnrichLoading] = useState(false);
   const [enrichError, setEnrichError] = useState("");
@@ -60,13 +60,14 @@ export function AdminPage() {
           title: form.title,
           type: form.type,
           price: Number(form.price || 0),
+          price_currency: form.price_currency || 'USD',
           description: form.description,
           image: form.image,
           country: form.country,
         }),
       });
       if (res.ok) {
-        setForm({ title: '', type: 'domestic', price: '', description: '', image: '', country: '' });
+        setForm({ title: '', type: 'domestic', price: '', price_currency: 'USD', description: '', image: '', country: '' });
         setEnrich(null);
         fetchData();
       }
@@ -102,15 +103,25 @@ export function AdminPage() {
           >
             <option value="domestic">Domestic</option>
             <option value="international">International</option>
-            <option value="custom">Custom</option>
+            <option value="combo">Combo</option>
           </select>
 
-          <input
-            className="w-full p-3 border rounded"
-            placeholder="Price ($)"
-            value={form.price}
-            onChange={e => setForm({ ...form, price: e.target.value })}
-          />
+          <div className="flex gap-2">
+            <input
+              className="flex-1 p-3 border rounded"
+              placeholder={form.price_currency === 'USD' ? 'Price (250)' : 'Narx (3000000)'}
+              value={form.price}
+              onChange={e => setForm({ ...form, price: e.target.value })}
+            />
+            <select
+              className="p-3 border rounded bg-white"
+              value={form.price_currency}
+              onChange={e => setForm({ ...form, price_currency: e.target.value })}
+            >
+              <option value="USD">USD ($)</option>
+              <option value="UZS">UZS (so'm)</option>
+            </select>
+          </div>
 
           {/* Country + AI fetch */}
           <div className="flex flex-col sm:flex-row gap-2">
@@ -226,7 +237,7 @@ export function AdminPage() {
                 <ImageWithFallback src={p.image || 'https://via.placeholder.com/80'} alt={p.title} className="w-20 h-12 object-cover rounded" />
                 <div className="flex-1">
                   <div className="font-semibold">{p.title}</div>
-                  <div className="text-sm text-slate-500">{p.type} — ${p.price}</div>
+                  <div className="text-sm text-slate-500">{p.type} — {p.price_currency === 'UZS' ? `${Number(p.price).toLocaleString()} so'm` : `$${Number(p.price).toLocaleString()}`}</div>
                   {p.country && <div className="text-xs text-slate-400">{p.country}</div>}
                 </div>
               </div>
