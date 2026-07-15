@@ -109,6 +109,7 @@ export function ComboTourDetailPage() {
       title: `${tour.title} (Combo Tour)`,
       basePrice: tour.price,
       price: finalPrice,
+      priceCurrency: 'USD',
       name: name.trim(),
       phone: phone.trim(),
       guests,
@@ -141,6 +142,7 @@ export function ComboTourDetailPage() {
           days: tour.days,
           status: "pending",
           telegram_id: telegramId,
+          package_id: tour.id,
         }),
       });
       if (res.ok) {

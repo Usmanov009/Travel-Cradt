@@ -11,6 +11,7 @@ export interface TravelPackage {
   image: string;
   duration: string;
   price: number;
+  priceCurrency?: string;
   rating: number;
   included: string[];
   country?: string;

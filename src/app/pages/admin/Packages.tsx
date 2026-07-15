@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+﻿import React, { useContext, useEffect, useState } from 'react';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 import { adminFetch } from '../../services/adminApi';
 
 const emptyForm = {
   type: 'domestic', category: '', title: '', description: '',
-  image: '', duration: '', price: '', priceSum: '', country: '', hotel: '',
+  image: '', duration: '', price: '', price_currency: 'USD', country: '', hotel: '',
   flight_included: false, vibe: '', included: '', interests: '',
   destination: '', destination1: '', destination2: '', country1: '', country2: '',
 };
@@ -63,7 +63,6 @@ export default function AdminPackages() {
   };
 
   const openEdit = (pkg: any) => {
-    setEditPkg(pkg);
     setForm({
       type: pkg.type || 'domestic',
       category: pkg.category || '',
@@ -72,7 +71,7 @@ export default function AdminPackages() {
       image: pkg.image || '',
       duration: pkg.duration || '',
       price: pkg.price || '',
-      priceSum: pkg.priceSum || '',
+      price_currency: pkg.price_currency || 'USD',
       country: pkg.country || '',
       hotel: pkg.hotel || '',
       flight_included: pkg.flight_included || false,
@@ -94,7 +93,7 @@ export default function AdminPackages() {
       const body = {
         ...form,
         price: parseFloat(form.price as string) || 0,
-        priceSum: parseFloat(form.priceSum as string) || 0,
+        price_currency: form.price_currency || 'USD',
         included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
         interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
         destination: form.destination || null,
@@ -190,7 +189,9 @@ export default function AdminPackages() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{pkg.country || '—'}</td>
-                  <td className="px-4 py-3 font-semibold">${pkg.price}</td>
+                  <td className="px-4 py-3 font-semibold">
+                    {pkg.price_currency === 'UZS' ? `${pkg.price?.toLocaleString()} so'm` : `$${pkg.price?.toLocaleString()}`}
+                  </td>
                   <td className="px-4 py-3 text-xs">
                     {isSuperAdmin ? (
                       <select
@@ -338,21 +339,47 @@ export default function AdminPackages() {
               {form.type === 'international' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat *</label>
+                    <select
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.country}
+                      onChange={e => setForm({...form, country: e.target.value})}
+                    >
+                      <option value="">Mamlakat tanlang...</option>
+                      <option value="USA">🇺🇸 AQSH (USA)</option>
+                      <option value="UAE">🇦🇪 BAA (Dubai)</option>
+                      <option value="UK">🇬🇧 Buyuk Britaniya</option>
+                      <option value="Egypt">🇪🇬 Misr</option>
+                      <option value="Indonesia">🇮🇩 Indoneziya (Bali)</option>
+                      <option value="Spain">🇪🇸 Ispaniya</option>
+                      <option value="Italy">🇮🇹 Italiya</option>
+                      <option value="Maldives">🇲🇻 Maldiv orollari</option>
+                      <option value="Malaysia">🇲🇾 Malayziya</option>
+                      <option value="Germany">🇩🇪 Germaniya</option>
+                      <option value="Thailand">🇹🇭 Tailand</option>
+                      <option value="Turkey">🇹🇷 Turkiya</option>
+                      <option value="France">🇫🇷 Fransiya</option>
+                      <option value="South Korea">🇰🇷 Janubiy Koreya</option>
+                      <option value="Japan">🇯🇵 Yaponiya</option>
+                      <option value="Greece">🇬🇷 Gretsiya</option>
+                      <option value="Switzerland">🇨🇭 Shveytsariya</option>
+                      <option value="China">🇨🇳 Xitoy</option>
+                      <option value="India">🇮🇳 Hindiston</option>
+                      <option value="Saudi Arabia">🇸🇦 Saudiya Arabistoni</option>
+                      <option value="Qatar">🇶🇦 Qatar</option>
+                      <option value="Kazakhstan">🇰🇿 Qozog'iston</option>
+                      <option value="Kyrgyzstan">🇰🇬 Qirg'iziston</option>
+                      <option value="Tajikistan">🇹🇯 Tojikiston</option>
+                      <option value="Azerbaijan">🇦🇿 Ozarbayjon</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
                     <input
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       value={form.destination}
                       onChange={e => setForm({...form, destination: e.target.value})}
                       placeholder="Parij"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat</label>
-                    <input
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={form.country}
-                      onChange={e => setForm({...form, country: e.target.value})}
-                      placeholder="Fransiya"
                     />
                   </div>
                 </div>
@@ -403,26 +430,27 @@ export default function AdminPackages() {
                 </>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Narx ($)</label>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Narx *</label>
                   <input
                     type="number"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.price}
                     onChange={e => setForm({...form, price: e.target.value})}
-                    placeholder="250"
+                    placeholder={form.price_currency === 'USD' ? '250' : '3000000'}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Narx (so'm)</label>
-                  <input
-                    type="number"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Valyuta</label>
+                  <select
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.priceSum || ''}
-                    onChange={e => setForm({...form, priceSum: e.target.value})}
-                    placeholder="3250000"
-                  />
+                    value={form.price_currency}
+                    onChange={e => setForm({...form, price_currency: e.target.value})}
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="UZS">UZS (so'm)</option>
+                  </select>
                 </div>
               </div>
 

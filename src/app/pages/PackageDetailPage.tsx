@@ -103,6 +103,7 @@ export function PackageDetailPage() {
       title: packageData.title,
       basePrice: packageData.price,
       price: finalPrice,
+      priceCurrency: packageData.priceCurrency,
       name: name.trim(),
       phone: phone.trim(),
       guests,
@@ -136,6 +137,7 @@ export function PackageDetailPage() {
           days: 1,
           status: "pending",
           telegram_id: telegramId,
+          package_id: packageData.id,
         }),
       });
       if (res.ok) {
@@ -231,10 +233,12 @@ export function PackageDetailPage() {
               </div>
               <div className="sm:text-right shrink-0">
                 <p className="text-sm text-slate-500">{t("detail.from")}</p>
-                <p className="text-3xl sm:text-4xl font-bold text-blue-600">${totalPrice}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-blue-600">
+                  {packageData.priceCurrency === 'UZS' ? `${totalPrice.toLocaleString()} so'm` : `$${totalPrice.toLocaleString()}`}
+                </p>
                 {guests > 1 && (
                   <p className="text-xs text-slate-400 mt-1">
-                    ${packageData.price} × {guests} mehmon
+                    {packageData.priceCurrency === 'UZS' ? `${packageData.price.toLocaleString()} so'm` : `$${packageData.price.toLocaleString()}`} × {guests} mehmon
                   </p>
                 )}
               </div>
@@ -370,7 +374,7 @@ export function PackageDetailPage() {
                   <p className="font-semibold">{t("detail.bookingDetails")}</p>
                   <p className="mt-2">{t("detail.bookingDetailsDesc")}</p>
                   <p className="mt-3 text-lg font-bold text-white">
-                    Jami: ${totalPrice.toLocaleString()}
+                    Jami: {packageData.priceCurrency === 'UZS' ? `${totalPrice.toLocaleString()} so'm` : `$${totalPrice.toLocaleString()}`}
                   </p>
                 </div>
               </div>

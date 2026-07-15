@@ -14,7 +14,7 @@ let getTelegramUser = async () => null;
 try { ({ createBot, getTelegramUser } = require('./bot')); } catch (e) { console.warn('Bot yuklanmadi:', e.message); }
 
 const { getPackages, createPackage, getPackageById } = require('./controllers/packagesController');
-const { getBookings, createBooking, updateBooking } = require('./controllers/bookingsController');
+const { getBookings, createBooking, updateBooking, deleteBooking } = require('./controllers/bookingsController');
 const { enrichCountry } = require('./controllers/enrichController');
 const { getAiRecommendation, chatWithAi, getDestinationInfo } = require('./controllers/aiController');
 const { geocodePlace } = require('./controllers/placesController');
@@ -77,7 +77,7 @@ app.get('/api/companies/:id', async (req, res) => {
     if (!rows.length) return res.status(404).json({ error: 'Company not found' });
 
     const { rows: packages } = await pool.query(
-      `SELECT id, type, title, image, price FROM packages WHERE company_id = $1 ORDER BY created_at DESC LIMIT 12`,
+      `SELECT id, type, title, image, price, price_currency FROM packages WHERE company_id = $1 ORDER BY created_at DESC LIMIT 12`,
       [req.params.id]
     );
     return res.json({ ...rows[0], packages });
@@ -106,6 +106,7 @@ app.get('/api/travel-offers', async (req, res) => {
 app.get('/api/bookings', getBookings);
 app.post('/api/bookings', createBooking);
 app.put('/api/bookings/:id', updateBooking);
+app.delete('/api/bookings/:id', deleteBooking);
 
 // Admin routes loaded in try-catch so a missing package never blocks port binding
 try {
@@ -149,6 +150,7 @@ async function setupDatabase() {
         image TEXT,
         duration VARCHAR(100),
         price NUMERIC(10,2) DEFAULT 0,
+        price_currency VARCHAR(10) DEFAULT 'USD',
         rating NUMERIC(3,1) DEFAULT 0,
         included TEXT[],
         country VARCHAR(100),
@@ -172,7 +174,8 @@ async function setupDatabase() {
         guests INTEGER DEFAULT 1,
         days INTEGER DEFAULT 1,
         status VARCHAR(20) DEFAULT 'pending',
-        booked_at TIMESTAMPTZ DEFAULT NOW()
+        booked_at TIMESTAMPTZ DEFAULT NOW(),
+        package_id INTEGER REFERENCES packages(id) ON DELETE SET NULL
       );
 
       CREATE TABLE IF NOT EXISTS users (
@@ -261,6 +264,16 @@ async function setupDatabase() {
     `).catch(() => {});
     await client.query(`
       ALTER TABLE tour_companies ADD COLUMN IF NOT EXISTS countries TEXT[];
+    `).catch(() => {});
+
+    // price_currency ustunini packages jadvaliga qo'shish
+    await client.query(`
+      ALTER TABLE packages ADD COLUMN IF NOT EXISTS price_currency VARCHAR(10) DEFAULT 'USD';
+    `).catch(() => {});
+
+    // package_id ustunini bookings jadvaliga qo'shish
+    await client.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS package_id INTEGER REFERENCES packages(id) ON DELETE SET NULL;
     `).catch(() => {});
 
     // Mavjud bronlarning company_id sini to'ldirish (packages.title orqali moslashtirish)

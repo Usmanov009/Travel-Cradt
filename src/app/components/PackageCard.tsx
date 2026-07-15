@@ -14,6 +14,7 @@ interface PackageCardProps {
   image: string;
   duration: string;
   price: number;
+  priceCurrency?: string;
   rating: number;
   included: string[];
   type?: "domestic" | "international";
@@ -35,6 +36,7 @@ export function PackageCard({
   image,
   duration,
   price,
+  priceCurrency,
   rating,
   included,
   type = "domestic",
@@ -170,7 +172,7 @@ export function PackageCard({
               {t("package.from")}
             </div>
             <div className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">
-              ${price.toLocaleString()}
+              {priceCurrency === 'UZS' ? `${price.toLocaleString()} so'm` : `$${price.toLocaleString()}`}
             </div>
           </div>
           <span className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs sm:text-sm px-3 py-2 sm:px-5 sm:py-2.5 rounded-lg sm:rounded-xl hover:shadow-lg transition-all whitespace-nowrap shrink-0">

@@ -2,9 +2,14 @@ const pool = require('../db');
 
 async function getBookings(req, res) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM bookings ORDER BY booked_at DESC LIMIT 500'
-    );
+    const { telegram_id } = req.query;
+    let query = 'SELECT * FROM bookings ORDER BY booked_at DESC LIMIT 500';
+    let params = [];
+    if (telegram_id) {
+      query = 'SELECT * FROM bookings WHERE telegram_id = $1 ORDER BY booked_at DESC LIMIT 500';
+      params.push(String(telegram_id));
+    }
+    const { rows } = await pool.query(query, params);
     return res.json(rows);
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -13,8 +18,8 @@ async function getBookings(req, res) {
 
 async function createBooking(req, res) {
   try {
-    const { title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id } = req.body;
-    console.log('[createBooking]', { title, name, phone, guests, status, company_id: company_id ?? null });
+    const { title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id } = req.body;
+    console.log('[createBooking]', { title, name, phone, guests, status, company_id: company_id ?? null, package_id: package_id ?? null });
 
     let resolvedTelegramId = telegram_id || null;
     let finalName = name;
@@ -62,12 +67,12 @@ async function createBooking(req, res) {
 
     try {
       const { rows } = await pool.query(
-        `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        `INSERT INTO bookings (title, type, price, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
          RETURNING *`,
-        [title, type, price, finalName, finalPhone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId]
+        [title, type, price, finalName, finalPhone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId, package_id || null]
       );
-      console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId, 'telegram_id:', resolvedTelegramId);
+      console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId, 'telegram_id:', resolvedTelegramId, 'package_id:', package_id);
       return res.status(201).json(rows[0]);
     } catch (insertErr) {
       console.warn('[createBooking] full insert failed:', insertErr.message, '— trying fallback');
@@ -108,4 +113,15 @@ async function updateBooking(req, res) {
   }
 }
 
-module.exports = { getBookings, createBooking, updateBooking };
+async function deleteBooking(req, res) {
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query('DELETE FROM bookings WHERE id = $1 RETURNING id', [id]);
+    if (!rows.length) return res.status(404).json({ error: 'Booking not found' });
+    return res.json({ deleted: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { getBookings, createBooking, updateBooking, deleteBooking };

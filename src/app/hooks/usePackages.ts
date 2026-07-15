@@ -15,6 +15,7 @@ export function mapDbPackage(pkg: any): TravelPackage {
     images: media.gallery,
     duration: pkg.duration || "",
     price: parseFloat(pkg.price) || 0,
+    priceCurrency: pkg.price_currency || "USD",
     rating: parseFloat(pkg.rating) || 0,
     included: pkg.included || [],
     country: pkg.country ?? undefined,

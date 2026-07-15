@@ -1,4 +1,4 @@
-﻿const { Telegraf, Markup, session } = require('telegraf');
+const { Telegraf, Markup, session } = require('telegraf');
 const Groq = require('groq-sdk');
 const pool = require('./db');
 const { normalizePhone } = require('./utils/phone');
@@ -280,7 +280,7 @@ function createBot() {
     );
   });
 
-    // ─── /my ────────────────────────────────────────────────
+  // ─── /my ────────────────────────────────────────────────
   bot.command('my', async (ctx) => {
     const isRegistered = await checkUserRegistration(ctx);
     if (!isRegistered) return;
@@ -294,19 +294,19 @@ function createBot() {
       
       if (rows.length === 0) {
         await ctx.reply(
-          '📋 *Sizning buyurtmalaringiz*\n\nSizda hali buyurtmalar mavjud emas.\n\n' +
-          'Tur tanlash uchun /packages buyrug\'ini ishlating.',
+          '📋 *Sizning buyurtmalaringiz*\\n\\nSizda hali buyurtmalar mavjud emas\\.\n\n' +
+          'Tur tanlash uchun /packages buyrug\'ini ishlating\\.',
           { parse_mode: 'MarkdownV2' }
         );
         return;
       }
       
-      let message = '📋 *Sizning buyurtmalaringiz*\n\n';
+      let message = '📋 *Sizning buyurtmalaringiz*\\n\\n';
       rows.forEach((b, i) => {
         const priceStr = b.price_currency === 'UZS' ? `${Number(b.price).toLocaleString()} so'm` : `$${Number(b.price).toLocaleString()}`;
         const statusEmoji = b.status === 'accepted' ? '✅' : b.status === 'rejected' ? '❌' : '⏳';
-        message += `${i + 1}\\. ${escMd(b.title)} — ${priceStr} ${statusEmoji}\n`;
-        message += `   📅 ${b.created_at ? new Date(b.created_at).toLocaleDateString('uz-UZ') : '—'} | 👤 ${b.guests || 1} mehmon\n\n`;
+        message += `${i + 1}\\. *${escMd(b.title)}* — ${priceStr} ${statusEmoji}\\n`;
+        message += `   📅 ${b.created_at ? new Date(b.created_at).toLocaleDateString('uz-UZ') : '—'} | 👤 ${b.guests || 1} mehmon\\n\\n`;
       });
       
       message += 'Batafsil ma\'lumot uchun Web ilovani oching:';
@@ -323,7 +323,10 @@ function createBot() {
       await ctx.reply('❌ Xatolik yuz berdi. Iltimos qayta urinib ko\'ring.');
     }
   });
-// ─── Callbacks ─────────────────────────────────────────
+
+
+
+  // ─── Callbacks ─────────────────────────────────────────
   bot.action('cat_domestic', async (ctx) => {
     const isRegistered = await checkUserRegistration(ctx);
     if (!isRegistered) return;

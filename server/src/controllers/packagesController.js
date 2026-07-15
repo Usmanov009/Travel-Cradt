@@ -38,16 +38,16 @@ async function getPackageById(req, res) {
 async function createPackage(req, res) {
   try {
     const { type, category, title, description, image, duration, price, rating,
-            included, country, hotel, flight_included, vibe, video, interests, partners, translations } = req.body;
+            included, country, hotel, flight_included, vibe, video, interests, partners, translations, price_currency } = req.body;
     const { rows } = await pool.query(
       `INSERT INTO packages
         (type, category, title, description, image, duration, price, rating,
-         included, country, hotel, flight_included, vibe, video, interests, partners, translations)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         included, country, hotel, flight_included, vibe, video, interests, partners, translations, price_currency)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
        RETURNING *`,
       [type, category, title, description, image, duration, price || 0, rating || 0,
        included || [], country, hotel, flight_included || false, vibe, video,
-       interests || null, partners || null, JSON.stringify(translations || {})]
+       interests || null, partners || null, JSON.stringify(translations || {}), price_currency || 'USD']
     );
     return res.status(201).json(rows[0]);
   } catch (err) {

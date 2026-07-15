@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+impo\$rt { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   ClipboardList, ArrowRight, Trash2, Pencil, Check,
@@ -36,27 +36,80 @@ export function DashboardPage() {
   };
 
   const syncStatuses = async (stored: StoredBooking[]) => {
-    const withDbId = stored.filter((b) => b.dbId);
-    if (withDbId.length === 0) return;
+    const tg = (window as any).Telegram?.WebApp;
+    const telegramId = tg?.initDataUnsafe?.user?.id;
+
     try {
-      const res = await fetch("/api/bookings");
+      let url = "/api/bookings";
+      if (telegramId) {
+        url = `/api/bookings?telegram_id=${telegramId}`;
+      }
+      const res = await fetch(url);
       if (!res.ok) return;
       const dbRows: any[] = await res.json();
       let changed = false;
-      const updated = stored.map((b) => {
-        if (!b.dbId) return b;
-        const row = dbRows.find((r) => r.id === b.dbId);
-        if (row && row.status !== b.status) {
-          changed = true;
-          return { ...b, status: row.status };
-        }
-        return b;
-      });
+
+      let updated = [...stored];
+
+      if (telegramId) {
+        // If we have telegramId, merge bookings from DB into local list
+        dbRows.forEach((row: any) => {
+          const idx = updated.findIndex(
+            (b) => b.dbId === row.id || (b.title === row.title && b.name === row.name && b.guests === row.guests)
+          );
+
+          const mapped: StoredBooking = {
+            id: row.package_id || row.id,
+            type: row.type as any,
+            title: row.title,
+            price: parseFloat(row.price) || 0,
+            name: row.name,
+            phone: row.phone,
+            guests: row.guests || 1,
+            bookedAt: row.booked_at || new Date().toISOString(),
+            days: row.days,
+            status: row.status,
+            dbId: row.id,
+            travelDate: row.travel_date ? row.travel_date.split('T')[0] : undefined,
+          };
+
+          if (idx !== -1) {
+            const existing = updated[idx];
+            if (
+              existing.status !== mapped.status ||
+              existing.price !== mapped.price ||
+              existing.guests !== mapped.guests ||
+              existing.name !== mapped.name ||
+              existing.dbId !== mapped.dbId
+            ) {
+              changed = true;
+              updated[idx] = { ...existing, ...mapped };
+            }
+          } else {
+            changed = true;
+            updated.push(mapped);
+          }
+        });
+      } else {
+        // Normal sync for local bookings by dbId
+        updated = stored.map((b) => {
+          if (!b.dbId) return b;
+          const row = dbRows.find((r) => r.id === b.dbId);
+          if (row && row.status !== b.status) {
+            changed = true;
+            return { ...b, status: row.status };
+          }
+          return b;
+        });
+      }
+
       if (changed) {
         localStorage.setItem("travelcraft_bookings", JSON.stringify(updated));
         setBookings(updated);
       }
-    } catch {}
+    } catch (err) {
+      console.error("[syncStatuses] error:", err);
+    }
   };
 
   useEffect(() => {
@@ -73,10 +126,19 @@ export function DashboardPage() {
   const domesticCount = bookings.filter((b) => b.type === "domestic").length;
   const intlCount = bookings.filter((b) => b.type === "international").length;
 
-  const handleClearBooking = (id: number, type: string) => {
+  const handleClearBooking = async (id: number, type: string) => {
+    const target = bookings.find((item) => item.id === id && item.type === type);
     const next = bookings.filter((item) => !(item.id === id && item.type === type));
     setBookings(next);
     localStorage.setItem("travelcraft_bookings", JSON.stringify(next));
+
+    if (target && target.dbId) {
+      try {
+        await fetch(`/api/bookings/${target.dbId}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error("Failed to delete booking from database:", err);
+      }
+    }
   };
 
   const handleStartEdit = (booking: StoredBooking) => {
@@ -116,7 +178,7 @@ export function DashboardPage() {
     },
     {
       label: "Jami xarajat",
-      value: `$${totalSpent.toLocaleString()}`,
+      value: totalSpent > 50000 ? `${totalSpent.toLocaleString()} so'm` : `$${totalSpent.toLocaleString()}`,
       icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" />,
       gradient: "from-emerald-500 to-teal-500",
       bg: "bg-emerald-50",
@@ -278,7 +340,7 @@ export function DashboardPage() {
                           {cfg.label}
                         </span>
                         <span className="text-base sm:text-lg font-bold text-slate-900">
-                          ${booking.price.toLocaleString()}
+                          {booking.priceCurrency === 'UZS' ? `${booking.price.toLocaleString()} so'm` : `${booking.price.toLocaleString()}`}
                         </span>
                       </div>
 
@@ -385,7 +447,7 @@ export function DashboardPage() {
                             />
                             {editGuests !== booking.guests && (
                               <span className="text-emerald-600 font-semibold mt-1">
-                                Yangi narx: ${previewPrice(booking).toLocaleString()}
+                                Yangi narx: {editGuests !== booking.guests ? (booking.priceCurrency === 'UZS' ? previewPrice(booking).toLocaleString() + " so'm" : "$" + previewPrice(booking).toLocaleString()) : ''}
                               </span>
                             )}
                           </label>

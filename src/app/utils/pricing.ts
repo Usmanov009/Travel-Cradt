@@ -5,6 +5,7 @@ export interface StoredBooking {
   type: BookingType;
   title: string;
   price: number;
+  priceCurrency?: string;
   name: string;
   phone: string;
   guests: number;

@@ -11,6 +11,7 @@ interface CompanyPackage {
   title: string;
   image: string;
   price: number;
+  price_currency?: string;
 }
 
 interface CompanyDetails {
@@ -199,7 +200,9 @@ export function CompanyInfoModal({ companyId, open, onClose }: Props) {
                             <PackageImage src={pkg.image} alt={pkg.title} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
                             <div className="min-w-0 flex-1">
                               <p className="font-semibold text-slate-800 text-sm truncate">{pkg.title}</p>
-                              <p className="text-xs text-slate-400">${pkg.price.toLocaleString()}</p>
+                              <p className="text-xs text-slate-400">
+                                {pkg.price_currency === 'UZS' ? `${pkg.price.toLocaleString()} so'm` : `$${pkg.price.toLocaleString()}`}
+                              </p>
                             </div>
                           </button>
                         ))}

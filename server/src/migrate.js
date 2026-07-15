@@ -15,6 +15,7 @@ async function migrate() {
         image TEXT,
         duration VARCHAR(100),
         price NUMERIC(10,2) DEFAULT 0,
+        price_currency VARCHAR(10) DEFAULT 'USD',
         rating NUMERIC(3,1) DEFAULT 0,
         included TEXT[],
         country VARCHAR(100),
@@ -38,7 +39,8 @@ async function migrate() {
         guests INTEGER DEFAULT 1,
         days INTEGER DEFAULT 1,
         status VARCHAR(20) DEFAULT 'pending',
-        booked_at TIMESTAMPTZ DEFAULT NOW()
+        booked_at TIMESTAMPTZ DEFAULT NOW(),
+        package_id INTEGER REFERENCES packages(id) ON DELETE SET NULL
       );
 
       CREATE TABLE IF NOT EXISTS users (
