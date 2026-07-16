@@ -22,7 +22,6 @@ import {
   MapPin,
   Calendar,
   Users,
-  DollarSign,
   Hotel,
   Car,
   Heart,
@@ -57,7 +56,6 @@ export function CustomPackagePage() {
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [planSelected, setPlanSelected] = useState(false);
-  const [customBudgetAmount, setCustomBudgetAmount] = useState("");
   const [userCity, setUserCity] = useState<string>("");
 
   useEffect(() => {
@@ -77,6 +75,7 @@ export function CustomPackagePage() {
       () => {}
     );
   }, []);
+
   const [showResults, setShowResults] = useState(false);
   const [dateError, setDateError] = useState("");
   const minBookableDate = getMinBookableDateString();
@@ -92,6 +91,7 @@ export function CustomPackagePage() {
   const [formData, setFormData] = useState({
     destination: "",
     destinationType: "",
+    selectedCountry: "",
     startDate: "",
     endDate: "",
     days: 3,
@@ -103,6 +103,14 @@ export function CustomPackagePage() {
     name: "",
     phone: "",
   });
+
+  useEffect(() => {
+    if (formData.selectedCountry === "uzbekistan") {
+      setFormData((prev) => ({ ...prev, destinationType: "domestic" }));
+    } else if (formData.selectedCountry) {
+      setFormData((prev) => ({ ...prev, destinationType: "international" }));
+    }
+  }, [formData.selectedCountry]);
 
   const { packages: matchPackages, loading: matchesLoading } = usePackages(
     formData.destinationType ? (formData.destinationType as PackageType) : undefined
@@ -285,6 +293,20 @@ export function CustomPackagePage() {
     },
   ];
 
+  const countries = [
+    { key: "uzbekistan", name: "O'zbekiston", type: "domestic" },
+    { key: "uae", name: "BAA", type: "international" },
+    { key: "thailand", name: "Thailand", type: "international" },
+    { key: "greece", name: "Yunoniston", type: "international" },
+  ];
+
+  const addressesByCountry: Record<string, DestinationData[]> = {
+    uzbekistan: uzbekistanRegions,
+    uae: destinationCatalog.filter((d) => d.country === "UAE"),
+    thailand: destinationCatalog.filter((d) => d.country === "Thailand"),
+    greece: destinationCatalog.filter((d) => d.country === "Greece"),
+  };
+
   const [selectedDestination, setSelectedDestination] = useState<DestinationData | null>(null);
   const [locationMessage, setLocationMessage] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -344,15 +366,19 @@ export function CustomPackagePage() {
     }
   };
 
-  const handleRegionSelect = (regionKey: string) => {
-    const region = uzbekistanRegions.find((item) => item.key === regionKey) || null;
-    if (region) {
+  const handleAddressSelect = (addressKey: string) => {
+    const addresses = formData.selectedCountry
+      ? addressesByCountry[formData.selectedCountry] || []
+      : [...uzbekistanRegions, ...destinationCatalog];
+    const address = addresses.find((item) => item.key === addressKey) || null;
+    if (address) {
       setFormData((prev) => ({
         ...prev,
-        destination: region.key,
+        destination: address.key,
+        selectedCountry: address.country === "O'zbekiston" || address.country === "O‘zbekiston" ? "uzbekistan" : address.country.toLowerCase(),
       }));
-      setSelectedDestination(region);
-      setLocationMessage(t("customPackage.locationDetected", { place: region.name }));
+      setSelectedDestination(address);
+      setLocationMessage(t("customPackage.locationDetected", { place: address.name }));
     } else {
       setFormData((prev) => ({ ...prev, destination: "" }));
       setSelectedDestination(null);
@@ -366,29 +392,26 @@ export function CustomPackagePage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     const normalized = value.toLowerCase().trim();
+    if (!normalized || normalized.length < 2) {
+      setSelectedDestination(null);
+      setLocationMessage("");
+      return;
+    }
 
-    const catalogMatch = destinationCatalog.find(
+    const searchScope = formData.selectedCountry
+      ? addressesByCountry[formData.selectedCountry] || []
+      : [...uzbekistanRegions, ...destinationCatalog];
+
+    const match = searchScope.find(
       (item) =>
         normalized.includes(item.key) ||
         item.name.toLowerCase() === normalized ||
         item.country.toLowerCase() === normalized,
     );
-    const regionMatch = uzbekistanRegions.find(
-      (item) =>
-        normalized.includes(item.key) ||
-        item.name.toLowerCase() === normalized,
-    );
-    const match = catalogMatch || regionMatch;
 
     if (match) {
       setSelectedDestination(match);
       setLocationMessage(t("customPackage.locationDetected", { place: match.name }));
-      return;
-    }
-
-    if (!normalized || normalized.length < 2) {
-      setSelectedDestination(null);
-      setLocationMessage("");
       return;
     }
 
@@ -397,7 +420,9 @@ export function CustomPackagePage() {
         setSelectedDestination({
           key: normalized.replace(/\s+/g, "-"),
           name: value.trim(),
-          country: value.trim(),
+          country: formData.selectedCountry
+            ? countries.find((c) => c.key === formData.selectedCountry)?.name || value.trim()
+            : value.trim(),
           description: "",
           images: [],
         });
@@ -441,21 +466,43 @@ export function CustomPackagePage() {
           if (data.displayName) placeName = data.displayName.split(",").slice(0, 2).join(", ");
         } catch (_) {}
 
-        setFormData((prev) => ({
-          ...prev,
-          destination: placeName,
-        }));
-        setSelectedDestination({
-          key: "current-location",
-          name: placeName,
-          country: t("customPackage.currentLocation"),
-          description: t("customPackage.currentLocationDescription"),
-          images: [
-            "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1493558103817-58b2924bce98?w=800&h=600&fit=crop",
-          ],
-        });
-        setLocationMessage(t("customPackage.locationDetected", { place: placeName }));
+        const searchScope = formData.selectedCountry
+          ? addressesByCountry[formData.selectedCountry] || []
+          : [...uzbekistanRegions, ...destinationCatalog];
+
+        const match = searchScope.find(
+          (item) =>
+            placeName.toLowerCase().includes(item.name.toLowerCase()) ||
+            item.name.toLowerCase().includes(placeName.toLowerCase()),
+        );
+
+        if (match) {
+          setFormData((prev) => ({
+            ...prev,
+            destination: match.key,
+            selectedCountry: match.country === "O'zbekiston" || match.country === "O‘zbekiston" ? "uzbekistan" : match.country.toLowerCase(),
+          }));
+          setSelectedDestination(match);
+          setLocationMessage(t("customPackage.locationDetected", { place: match.name }));
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            destination: placeName,
+          }));
+          setSelectedDestination({
+            key: "current-location",
+            name: placeName,
+            country: formData.selectedCountry
+              ? countries.find((c) => c.key === formData.selectedCountry)?.name || t("customPackage.currentLocation")
+              : t("customPackage.currentLocation"),
+            description: t("customPackage.currentLocationDescription"),
+            images: [
+              "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=800&h=600&fit=crop",
+              "https://images.unsplash.com/photo-1493558103817-58b2924bce98?w=800&h=600&fit=crop",
+            ],
+          });
+          setLocationMessage(t("customPackage.locationDetected", { place: placeName }));
+        }
       },
       () => {
         setLocationMessage(t("customPackage.locationDenied"));
@@ -609,7 +656,15 @@ export function CustomPackagePage() {
 
   const selectPlan = (plan: typeof planTemplates[0]) => {
     if (plan.presets) {
-      setFormData((prev) => ({ ...prev, ...plan.presets }));
+      const countryMap: Record<string, string> = {
+        domestic: "uzbekistan",
+        international: "uae",
+      };
+      setFormData((prev) => ({
+        ...prev,
+        ...plan.presets,
+        selectedCountry: countryMap[plan.presets.destinationType] || "",
+      }));
     }
     setPlanSelected(true);
     setCurrentStep(1);
@@ -626,7 +681,7 @@ export function CustomPackagePage() {
 
   const getBudgetTier = (): 'budget' | 'mid-range' | 'luxury' | null => {
     const b = formData.budget;
-    if (!b) return null;
+    if (b === 'budget' || b === 'mid-range' || b === 'luxury') return b as 'budget' | 'mid-range' | 'luxury';
     if (b === t("customPackage.budgetOptions.budget")) return 'budget';
     if (b === t("customPackage.budgetOptions.midRange")) return 'mid-range';
     if (b === t("customPackage.budgetOptions.luxury")) return 'luxury';
@@ -728,6 +783,9 @@ export function CustomPackagePage() {
       const n = parseInt(b.replace(/\D/g, ""), 10);
       return Number.isNaN(n) ? undefined : n;
     }
+    if (b === "budget") return 500;
+    if (b === "mid-range") return 1500;
+    if (b === "luxury") return 3000;
     const tier = getBudgetTier();
     if (tier === "budget") return 500;
     if (tier === "mid-range") return 1500;
@@ -797,193 +855,181 @@ export function CustomPackagePage() {
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step1")}</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <button
-                onClick={() =>
-                  setFormData({ ...formData, destinationType: "domestic" })
-                }
-                className={`p-6 rounded-[2rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg ${
-                  formData.destinationType === "domestic"
-                    ? "border-transparent bg-gradient-to-br from-[#1E3A8A] to-[#06B6D4] text-white shadow-lg"
-                    : "border-[#1E3A8A]/10 text-[#1E3A8A]"
-                }`}
-              >
-                <MapPin className={`w-8 h-8 mb-3 ${formData.destinationType === "domestic" ? "text-white" : "text-blue-600"}`} />
-                <h3 className="font-bold text-xl mb-2">
-                  {t("hero.domestic")}
-                </h3>
-                <p className={formData.destinationType === "domestic" ? "text-blue-100" : "text-slate-600"}>{t("hero.domesticDesc")}</p>
-              </button>
-              <button
-                onClick={() =>
-                  setFormData({ ...formData, destinationType: "international" })
-                }
-                className={`p-6 rounded-[2rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg ${
-                  formData.destinationType === "international"
-                    ? "border-transparent bg-gradient-to-br from-[#06B6D4] to-[#1E3A8A] text-white shadow-lg"
-                    : "border-[#1E3A8A]/10 text-[#1E3A8A]"
-                }`}
-              >
-                <Sparkles className={`w-8 h-8 mb-3 ${formData.destinationType === "international" ? "text-white" : "text-purple-600"}`} />
-                <h3 className="font-bold text-xl mb-2">
-                  {t("hero.international")}
-                </h3>
-                <p className={formData.destinationType === "international" ? "text-purple-100" : "text-slate-600"}>{t("hero.internationalDesc")}</p>
-              </button>
-            </div>
-            {formData.destinationType && (
-              <div className="mt-6 space-y-4">
+            <div className="space-y-4">
+              <div>
                 <label className="block text-sm font-semibold mb-2">
-                  {t("customPackage.destinationLabel")}
+                  {t("customPackage.selectCountryPlaceholder")}
                 </label>
-                <div className="flex flex-col gap-3">
-                  {formData.destinationType === "domestic" ? (
+                <select
+                  value={formData.selectedCountry}
+                  onChange={(e) => {
+                    const country = countries.find((c) => c.key === e.target.value);
+                    if (country) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        selectedCountry: country.key,
+                        destinationType: country.type,
+                        destination: "",
+                      }));
+                      setSelectedDestination(null);
+                      setLocationMessage("");
+                    }
+                  }}
+                  className="w-full px-4 py-3 border border-sky-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                >
+                  <option value="">{t("customPackage.selectCountryPlaceholder")}</option>
+                  {countries.map((country) => (
+                    <option key={country.key} value={country.key}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {formData.selectedCountry && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    {t("customPackage.selectAddressPlaceholder")}
+                  </label>
+                  <div className="flex flex-col gap-3">
                     <select
                       value={formData.destination}
-                      onChange={(e) => handleRegionSelect(e.target.value)}
+                      onChange={(e) => handleAddressSelect(e.target.value)}
                       className="w-full px-4 py-3 border border-sky-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                     >
-                      <option value="">{t("customPackage.selectRegionPlaceholder")}</option>
-                      {uzbekistanRegions.map((region) => (
-                        <option key={region.key} value={region.key}>
-                          {region.name}
+                      <option value="">{t("customPackage.selectAddressPlaceholder")}</option>
+                      {(addressesByCountry[formData.selectedCountry] || []).map((addr) => (
+                        <option key={addr.key} value={addr.key}>
+                          {addr.name}
                         </option>
                       ))}
                     </select>
-                  ) : (
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <input
-                        type="text"
-                        placeholder={t("customPackage.destinationPlaceholder")}
-                        value={formData.destination}
-                        onChange={(e) => updateDestination(e.target.value)}
-                        className="w-full px-4 py-3 border border-sky-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                      />
+                    {formData.destinationType === "international" && (
                       <button
                         onClick={handleUseCurrentLocation}
                         className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#06B6D4] px-5 py-3 text-white shadow-lg shadow-[#06B6D4]/30 hover:from-[#1E40AF] hover:to-[#0891B2] transition"
                       >
                         {t("customPackage.useLocation")}
                       </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {locationMessage && (
+                <p className="text-sm text-slate-500">{locationMessage}</p>
+              )}
+
+              {selectedDestination && (
+                <div className="rounded-[2rem] border border-sky-200 bg-white p-5 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)]">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm text-sky-600 uppercase tracking-[0.2em] mb-2">
+                        {formData.destinationType === "international"
+                          ? t("hero.international")
+                          : t("hero.domestic")}
+                      </p>
+                      <h3 className="text-2xl font-semibold text-slate-900">
+                        {selectedDestination.name}
+                      </h3>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {selectedDestination.country}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="inline-flex rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                        {t("customPackage.placeCard")}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedDestination.description && (
+                    <p className="text-sm text-slate-700 mt-4 mb-4 leading-7">
+                      {selectedDestination.description}
+                    </p>
+                  )}
+                  {selectedDestination.images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedDestination.images.slice(0, 2).map((src, index) => (
+                        <PackageImage
+                          key={index}
+                          src={src}
+                          alt={`${selectedDestination.name} ${index + 1}`}
+                          className="h-32 w-full rounded-2xl object-cover"
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
+              )}
 
-                {locationMessage && (
-                  <p className="text-sm text-slate-500">{locationMessage}</p>
-                )}
-
-                {selectedDestination && (
-                  <div className="rounded-[2rem] border border-sky-200 bg-white p-5 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)]">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-sm text-sky-600 uppercase tracking-[0.2em] mb-2">
-                          {formData.destinationType === "international"
-                            ? t("hero.international")
-                            : t("hero.domestic")}
-                        </p>
-                        <h3 className="text-2xl font-semibold text-slate-900">
-                          {selectedDestination.name}
-                        </h3>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {selectedDestination.country}
-                        </p>
+              {/* AI Destination Info Card */}
+              {(destInfoLoading || destInfo) && selectedDestination && (
+                <div className="rounded-[2rem] border border-[#06B6D4]/10 bg-gradient-to-br from-[#E5E7EB] to-[#DBEAFE] p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-4 h-4 text-[#1E3A8A]" />
+                    <span className="text-sm font-semibold text-[#1E3A8A]">{t("chat.aiInfo")}</span>
+                  </div>
+                  {destInfoLoading ? (
+                    <div className="flex items-center gap-2 text-slate-500 text-sm">
+                      <div className="flex gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]" />
                       </div>
-                      <div className="text-right">
-                        <span className="inline-flex rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                          {t("customPackage.placeCard")}
-                        </span>
-                      </div>
+                      {t("chat.aiLoading")}
                     </div>
-                    {selectedDestination.description && (
-                      <p className="text-sm text-slate-700 mt-4 mb-4 leading-7">
-                        {selectedDestination.description}
-                      </p>
-                    )}
-                    {selectedDestination.images.length > 0 && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedDestination.images.slice(0, 2).map((src, index) => (
-                          <PackageImage
-                            key={index}
-                            src={src}
-                            alt={`${selectedDestination.name} ${index + 1}`}
-                            className="h-32 w-full rounded-2xl object-cover"
-                          />
+                  ) : destInfo && (
+                    <div className="space-y-3">
+                      <ul className="space-y-1.5">
+                        {destInfo.highlights?.map((h, i) => (
+                          <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
+                            <span className="text-blue-500 font-bold mt-0.5">•</span>
+                            {h}
+                          </li>
                         ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* AI Destination Info Card */}
-                {(destInfoLoading || destInfo) && selectedDestination && (
-                  <div className="rounded-[2rem] border border-[#06B6D4]/10 bg-gradient-to-br from-[#E5E7EB] to-[#DBEAFE] p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-4 h-4 text-[#1E3A8A]" />
-                      <span className="text-sm font-semibold text-[#1E3A8A]">{t("chat.aiInfo")}</span>
-                    </div>
-                    {destInfoLoading ? (
-                      <div className="flex items-center gap-2 text-slate-500 text-sm">
-                        <div className="flex gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:0ms]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:150ms]" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce [animation-delay:300ms]" />
-                        </div>
-                        {t("chat.aiLoading")}
-                      </div>
-                    ) : destInfo && (
-                      <div className="space-y-3">
-                        <ul className="space-y-1.5">
-                          {destInfo.highlights?.map((h, i) => (
-                            <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
-                              <span className="text-blue-500 font-bold mt-0.5">•</span>
-                              {h}
-                            </li>
-                          ))}
-                        </ul>
-                        {destInfo.bestTime && (
-                          <p className="text-sm text-slate-600">
-                            <span className="font-semibold">🗓 {t("chat.bestTime")}:</span> {destInfo.bestTime}
+                      </ul>
+                      {destInfo.bestTime && (
+                        <p className="text-sm text-slate-600">
+                          <span className="font-semibold">🗓 {t("chat.bestTime")}:</span> {destInfo.bestTime}
+                        </p>
+                      )}
+                      {destInfo.prices && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                            💰 {t("chat.prices")} ({t("chat.perDay")})
                           </p>
-                        )}
-                        {destInfo.prices && (
-                          <div>
-                            <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
-                              💰 {t("chat.prices")} ({t("chat.perDay")})
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                              {(["budget", "midRange", "luxury"] as const).map((level) => (
-                                <div key={level} className="bg-white rounded-xl p-2.5 text-center border border-slate-200 shadow-sm">
-                                  <div className="text-xs text-slate-400 mb-1 capitalize">
-                                    {level === "midRange" ? "Mid" : level}
-                                  </div>
-                                  <div className="text-xs font-bold text-slate-800">
-                                    {destInfo.prices[level]}
-                                  </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {(["budget", "midRange", "luxury"] as const).map((level) => (
+                              <div key={level} className="bg-white rounded-xl p-2.5 text-center border border-slate-200 shadow-sm">
+                                <div className="text-xs text-slate-400 mb-1 capitalize">
+                                  {level === "midRange" ? "Mid" : level}
                                 </div>
-                              ))}
-                            </div>
+                                <div className="text-xs font-bold text-slate-800">
+                                  {destInfo.prices[level]}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        )}
-                        {destInfo.tip && (
-                          <div className="bg-white rounded-xl p-3 border border-slate-200 text-xs text-slate-600">
-                            💡 <span className="font-semibold">{t("chat.tip")}:</span> {destInfo.tip}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                        </div>
+                      )}
+                      {destInfo.tip && (
+                        <div className="bg-white rounded-xl p-3 border border-slate-200 text-xs text-slate-600">
+                          💡 <span className="font-semibold">{t("chat.tip")}:</span> {destInfo.tip}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                {mapQuery && (
-                  <DestinationMap
-                    query={mapQuery}
-                    title={t("customPackage.mapTitle")}
-                    subtitle={t("customPackage.mapSubtitle")}
-                  />
-                )}
-              </div>
-            )}
+              {mapQuery && (
+                <DestinationMap
+                  query={mapQuery}
+                  title={t("customPackage.mapTitle")}
+                  subtitle={t("customPackage.mapSubtitle")}
+                />
+              )}
+            </div>
           </div>
         );
 
@@ -1103,72 +1149,30 @@ export function CustomPackagePage() {
 
       case 4: {
         const budgetOptions = [
-          { key: "budget", label: t("customPackage.budgetOptions.budget"), range: "$100–500/kun" },
-          { key: "mid-range", label: t("customPackage.budgetOptions.midRange"), range: "$500–1500/kun" },
-          { key: "luxury", label: t("customPackage.budgetOptions.luxury"), range: "$1500+/kun" },
+          { key: "budget", label: t("customPackage.budgetOptions.budget") },
+          { key: "mid-range", label: t("customPackage.budgetOptions.midRange") },
+          { key: "luxury", label: t("customPackage.budgetOptions.luxury") },
         ];
-        const isCustomBudget = formData.budget.startsWith("$") && !budgetOptions.some(b => b.label === formData.budget);
 
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step4")}</h2>
-            <div className="grid md:grid-cols-3 gap-4">
-              {budgetOptions.map((budget) => (
-                <button
-                  key={budget.key}
-                  onClick={() => { setFormData({ ...formData, budget: budget.label }); setCustomBudgetAmount(""); }}
-                  className={`p-6 rounded-[1.75rem] border transition-all shadow-sm bg-white hover:-translate-y-0.5 hover:shadow-lg ${
-                      formData.budget === budget.label
-                        ? "border-transparent bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg"
-                        : "border-slate-200 text-slate-700"
-                    }`}
-                >
-                  <DollarSign className={`w-8 h-8 mb-3 mx-auto ${formData.budget === budget.label ? "text-white" : "text-blue-600"}`} />
-                  <h3 className="font-bold text-lg">{budget.label}</h3>
-                  <p className={`text-xs mt-1 ${formData.budget === budget.label ? "text-white/80" : "text-slate-400"}`}>{budget.range}</p>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 border-t border-slate-200" />
-              <span className="text-sm text-slate-400">yoki aniq summa</span>
-              <div className="flex-1 border-t border-slate-200" />
-            </div>
-
-            <div className={`rounded-[1.75rem] border p-5 space-y-4 transition-all ${isCustomBudget ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}`}>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500 font-bold text-lg">$</span>
-                <input
-                  type="number"
-                  min={50}
-                  max={50000}
-                  placeholder="500"
-                  value={customBudgetAmount}
-                  onChange={(e) => {
-                    setCustomBudgetAmount(e.target.value);
-                    setFormData({ ...formData, budget: e.target.value ? `$${e.target.value}` : "" });
-                  }}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-                />
-              </div>
-              <input
-                type="range"
-                min={50}
-                max={10000}
-                step={50}
-                value={customBudgetAmount ? Number(customBudgetAmount) : 500}
-                onChange={(e) => {
-                  setCustomBudgetAmount(e.target.value);
-                  setFormData({ ...formData, budget: `$${e.target.value}` });
-                }}
-                className="w-full accent-blue-600 cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-slate-400">
-                <span>$50</span>
-                <span className="font-semibold text-blue-600">{customBudgetAmount ? `$${Number(customBudgetAmount).toLocaleString()}` : ""}</span>
-                <span>$10,000</span>
-              </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                {t("customPackage.labels.budget")}
+              </label>
+              <select
+                value={formData.budget}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                className="w-full px-4 py-3 border border-sky-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+              >
+                <option value="">{t("customPackage.labels.budget")}</option>
+                {budgetOptions.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         );

@@ -83,6 +83,8 @@ const resources = {
         viewRecommended: "Tavsiya Etilgan Paketlarni Ko'rish",
         destinationPlaceholder: "Qayerga borishni yozing",
         selectRegionPlaceholder: "Viloyatni tanlang",
+        selectCountryPlaceholder: "Mamlakatni tanlang",
+        selectAddressPlaceholder: "Manzilni tanlang",
         useLocation: "Hozirgi joyim",
         destinationPreview: "Tanlangan manzil",
         locationDetected: "Joy topildi: {{place}}",
