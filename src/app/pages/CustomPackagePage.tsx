@@ -78,6 +78,7 @@ export function CustomPackagePage() {
 
   const [showResults, setShowResults] = useState(false);
   const [dateError, setDateError] = useState("");
+  const [budgetError, setBudgetError] = useState("");
   const minBookableDate = getMinBookableDateString();
 
   type DestInfo = {
@@ -1650,6 +1651,13 @@ export function CustomPackagePage() {
       }
       setDateError("");
     }
+    if (currentStep === 4) {
+      if (!formData.budget) {
+        setBudgetError("Byudjetni kiriting");
+        return;
+      }
+      setBudgetError("");
+    }
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
@@ -2217,7 +2225,7 @@ export function CustomPackagePage() {
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step4")}</h2>
             <div>
               <label className="block text-sm font-semibold mb-2">
-                {t("customPackage.labels.budget")}
+                {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -2225,9 +2233,15 @@ export function CustomPackagePage() {
                 max={50000}
                 placeholder="Masalan: 1000"
                 value={formData.budget ? formData.budget.replace(/[^0-9]/g, '') : ''}
-                onChange={(e) => setFormData({ ...formData, budget: e.target.value ? `$${e.target.value}` : "" })}
-                className="w-full px-4 py-3 border border-sky-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                onChange={(e) => {
+                  setBudgetError("");
+                  setFormData({ ...formData, budget: e.target.value ? `$${e.target.value}` : "" });
+                }}
+                className={`w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${budgetError ? 'border-red-400' : 'border-sky-200'}`}
               />
+              {budgetError && (
+                <p className="text-sm text-red-500 mt-1">{budgetError}</p>
+              )}
             </div>
           </div>
         );
