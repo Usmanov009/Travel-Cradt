@@ -22,11 +22,19 @@ async function getPackages(req, res) {
 
 async function getPackageById(req, res) {
   try {
+    const params = [req.params.id];
+    let typeFilter = '';
+    if (req.query.type) {
+      typeFilter = ' AND p.type = $2';
+      params.push(req.query.type);
+    }
     const { rows } = await pool.query(
       `SELECT p.*, tc.name AS company_name, tc.logo AS company_logo
        FROM packages p LEFT JOIN tour_companies tc ON p.company_id = tc.id
-       WHERE p.id = $1`,
-      [req.params.id]
+       WHERE (p.id = $1 OR p.local_id = $1)${typeFilter}
+       ORDER BY (p.id = $1)::int DESC
+       LIMIT 1`,
+      params
     );
     if (!rows.length) return res.status(404).json({ error: 'Package not found' });
     return res.json(rows[0]);
