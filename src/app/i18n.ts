@@ -124,8 +124,11 @@ const resources = {
         budgetOptions: {
           budget: "Byudjet",
           midRange: "O'rta Daraja",
-          luxury: "Hasamat",
-        },
+        luxury: "Hasamat",
+        selectCountryPlaceholder: "Mamlakatni tanlang",
+        selectAddressPlaceholder: "Shahar yoki manzilni tanlang",
+        budgetRequired: "Byudjet turini tanlang",
+      },
         hotelOptions: {
           threeStar: "3-Yulduz",
           fourStar: "4-Yulduz",
@@ -406,6 +409,9 @@ const resources = {
           budget: "Бюджет",
           midRange: "Средний Уровень",
           luxury: "Роскошь",
+          selectCountryPlaceholder: "Выберите страну",
+          selectAddressPlaceholder: "Выберите город или адрес",
+          budgetRequired: "Выберите тип бюджета",
         },
         hotelOptions: {
           threeStar: "3-Звезды",
@@ -687,6 +693,9 @@ const resources = {
           budget: "Budget",
           midRange: "Mid-Range",
           luxury: "Luxury",
+          selectCountryPlaceholder: "Select a country",
+          selectAddressPlaceholder: "Select a city or address",
+          budgetRequired: "Please select a budget type",
         },
         hotelOptions: {
           threeStar: "3-Star",

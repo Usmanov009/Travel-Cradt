@@ -57,7 +57,6 @@ export function CustomPackagePage() {
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [planSelected, setPlanSelected] = useState(false);
-  const [customBudgetAmount, setCustomBudgetAmount] = useState("");
   const [userCity, setUserCity] = useState<string>("");
 
   useEffect(() => {
