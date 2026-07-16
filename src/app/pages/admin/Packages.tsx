@@ -383,7 +383,6 @@ export default function AdminPackages() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
-<<<<<<< HEAD
                      <input
                        disabled={!form.country}
                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -394,18 +393,6 @@ export default function AdminPackages() {
                      {!form.country && (
                        <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
                      )}
-=======
-                    <input
-                      disabled={!form.country}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={form.destination}
-                      onChange={e => setForm({...form, destination: e.target.value})}
-                      placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
-                    />
-                    {!form.country && (
-                      <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
-                    )}
->>>>>>> 24a26569d198a1ee71ae2a381175503046b09243
                   </div>
                 </div>
               )}
