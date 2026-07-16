@@ -1148,12 +1148,6 @@ export function CustomPackagePage() {
         );
 
       case 4: {
-        const budgetOptions = [
-          { key: "budget", label: t("customPackage.budgetOptions.budget") },
-          { key: "mid-range", label: t("customPackage.budgetOptions.midRange") },
-          { key: "luxury", label: t("customPackage.budgetOptions.luxury") },
-        ];
-
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step4")}</h2>
@@ -1161,18 +1155,15 @@ export function CustomPackagePage() {
               <label className="block text-sm font-semibold mb-2">
                 {t("customPackage.labels.budget")}
               </label>
-              <select
-                value={formData.budget}
-                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+              <input
+                type="number"
+                min={50}
+                max={50000}
+                placeholder="Masalan: 1000"
+                value={formData.budget ? formData.budget.replace(/[^0-9]/g, '') : ''}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value ? `$${e.target.value}` : "" })}
                 className="w-full px-4 py-3 border border-sky-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              >
-                <option value="">{t("customPackage.labels.budget")}</option>
-                {budgetOptions.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
         );
