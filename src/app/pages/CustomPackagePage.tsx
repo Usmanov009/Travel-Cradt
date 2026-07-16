@@ -600,7 +600,7 @@ export function CustomPackagePage() {
       id: "custom",
       title: "O'z Paketim",
       emoji: "✏️",
-      image: PACKAGE_MEDIA["domestic-13"].cover,
+      image: PACKAGE_MEDIA["domestic-1"]?.cover ?? "",
       tags: ["Erkin"],
       description: "Barcha tafsilotlarni o'zim belgilayman",
       presets: null,

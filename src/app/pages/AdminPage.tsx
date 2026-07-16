@@ -56,6 +56,7 @@ export function AdminPage() {
       const res = await fetch(api('/packages'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+<<<<<<< HEAD
           body: JSON.stringify({
             title: form.title,
             type: form.type,
@@ -65,6 +66,17 @@ export function AdminPage() {
             image: form.image,
             country: form.country,
           }),
+=======
+        body: JSON.stringify({
+          title: form.title,
+          type: form.type,
+          price: Number(form.price || 0),
+          price_currency: form.price_currency || 'USD',
+          description: form.description,
+          image: form.image,
+          country: form.country,
+        }),
+>>>>>>> 24a26569d198a1ee71ae2a381175503046b09243
       });
       if (res.ok) {
         setForm({ title: '', type: 'domestic', price: '', price_currency: 'USD', description: '', image: '', country: '' });
@@ -103,7 +115,11 @@ export function AdminPage() {
           >
             <option value="domestic">Domestic</option>
             <option value="international">International</option>
+<<<<<<< HEAD
              <option value="combo">Combo</option>
+=======
+            <option value="combo">Combo</option>
+>>>>>>> 24a26569d198a1ee71ae2a381175503046b09243
           </select>
 
           <div className="flex gap-2">

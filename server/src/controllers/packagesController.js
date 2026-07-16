@@ -22,6 +22,10 @@ async function getPackages(req, res) {
 
 async function getPackageById(req, res) {
   try {
+<<<<<<< HEAD
+=======
+    // Paketni id yoki local_id orqali topamiz (bot ba'zan local_id yuboradi)
+>>>>>>> 24a26569d198a1ee71ae2a381175503046b09243
     const params = [req.params.id];
     let typeFilter = '';
     if (req.query.type) {

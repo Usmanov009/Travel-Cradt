@@ -276,6 +276,11 @@ async function setupDatabase() {
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS package_id INTEGER REFERENCES packages(id) ON DELETE SET NULL;
     `).catch(() => {});
 
+    // price_currency ustunini bookings jadvaliga qo'shish (narxni to'g'ri ko'rsatish uchun)
+    await client.query(`
+      ALTER TABLE bookings ADD COLUMN IF NOT EXISTS price_currency VARCHAR(10) DEFAULT 'USD';
+    `).catch(() => {});
+
     // Mavjud bronlarning company_id sini to'ldirish (packages.title orqali moslashtirish)
     await client.query(`
       UPDATE bookings b

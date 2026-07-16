@@ -87,6 +87,18 @@ async function getPackageByLocalId(type, localId) {
   }
 }
 
+async function getPackageByIdFromDB(id) {
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM packages WHERE id = $1 LIMIT 1',
+      [id]
+    );
+    return rows[0] || null;
+  } catch {
+    return null;
+  }
+}
+
 function formatPackageDetail(pkg, type) {
   const emoji = type === 'domestic' ? '🏛' : '🌏';
   const included = pkg.included ? pkg.included.slice(0, 4).map(i => `• ${i}`).join('\n') : '';
@@ -530,10 +542,13 @@ async function showPackageList(ctx, type) {
 
   const buttons = list.slice(0, 6).map(p => {
     const priceStr = p.price_currency === 'UZS' ? `${p.price?.toLocaleString()} so'm` : `$${p.price}`;
+    // local_id faqat seedlangan paketlarda bor; admin yaratgan paketlarda NULL bo'ladi,
+    // shuning uchun tugma uchun doim DB id dan foydalanamiz (local_id bo'lmasa).
+    const pkgRef = p.id || p.local_id;
     return [
       Markup.button.callback(
         `${emoji} ${p.title} — ${priceStr}`,
-        `pkg_${type}_${p.local_id}`
+        `pkg_${type}_${pkgRef}`
       ),
     ];
   });
@@ -549,7 +564,10 @@ async function showPackageList(ctx, type) {
 async function showPackageDetail(ctx, type, localId) {
   const url = getWebAppUrl();
 
-  let pkg = await getPackageByLocalId(type, localId);
+  // Avval DB id bo'yicha, keyin local_id bo'yicha topamiz
+  // (admin yaratgan paketlarda local_id NULL bo'lishi mumkin)
+  let pkg = await getPackageByIdFromDB(localId);
+  if (!pkg) pkg = await getPackageByLocalId(type, localId);
   if (!pkg) {
     const staticList = type === 'domestic' ? STATIC_DOMESTIC : STATIC_INTERNATIONAL;
     pkg = staticList.find(p => p.local_id === localId);
