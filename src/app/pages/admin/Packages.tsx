@@ -7,6 +7,7 @@ const emptyForm = {
   image: '', duration: '', price: '', price_currency: 'USD', country: '', hotel: '',
   flight_included: false, vibe: '', included: '', interests: '',
   destination: '', destination1: '', destination2: '', country1: '', country2: '',
+  pdf: '',
 };
 
 export default function AdminPackages() {
@@ -21,6 +22,7 @@ export default function AdminPackages() {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const load = () => {
     if (!token) return;
@@ -63,6 +65,7 @@ export default function AdminPackages() {
   };
 
   const openEdit = (pkg: any) => {
+    setEditPkg(pkg);
     setForm({
       type: pkg.type || 'domestic',
       category: pkg.category || '',
@@ -83,6 +86,7 @@ export default function AdminPackages() {
       destination2: pkg.destination2 || '',
       country1: pkg.country1 || '',
       country2: pkg.country2 || '',
+      pdf: pkg.pdf || '',
     });
     setShowForm(true);
   };
@@ -484,6 +488,29 @@ export default function AdminPackages() {
                   onChange={e => setForm({...form, image: e.target.value})}
                   placeholder="https://..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PDF hujjat (Tur dasturi)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={e => {
+                    const file = e.target.files?.[0] || null;
+                    setPdfFile(file);
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setForm({...form, pdf: reader.result as string});
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {form.pdf && (
+                  <a href={form.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                    PDF oldindan ko'rish
+                  </a>
+                )}
               </div>
 
               <div>

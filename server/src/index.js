@@ -271,6 +271,11 @@ async function setupDatabase() {
       ALTER TABLE packages ADD COLUMN IF NOT EXISTS price_currency VARCHAR(10) DEFAULT 'USD';
     `).catch(() => {});
 
+    // pdf ustunini packages jadvaliga qo'shish
+    await client.query(`
+      ALTER TABLE packages ADD COLUMN IF NOT EXISTS pdf TEXT;
+    `).catch(() => {});
+
     // package_id ustunini bookings jadvaliga qo'shish
     await client.query(`
       ALTER TABLE bookings ADD COLUMN IF NOT EXISTS package_id INTEGER REFERENCES packages(id) ON DELETE SET NULL;

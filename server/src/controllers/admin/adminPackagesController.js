@@ -36,7 +36,7 @@ async function createPackage(req, res) {
     const {
       type, category, title, description, image, duration,
       price, rating, included, country, hotel, flight_included,
-      vibe, interests, partners, translations, company_id, price_currency
+      vibe, interests, partners, translations, company_id, price_currency, pdf
     } = req.body;
 
     // Tur firma admini faqat o'z kompaniyasi nomidan paket yarata oladi
@@ -46,12 +46,12 @@ async function createPackage(req, res) {
 
     const { rows } = await pool.query(`
       INSERT INTO packages (type, category, title, description, image, duration, price, rating,
-        included, country, hotel, flight_included, vibe, interests, partners, translations, company_id, price_currency)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        included, country, hotel, flight_included, vibe, interests, partners, translations, company_id, price_currency, pdf)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
       RETURNING *
     `, [type || 'domestic', category, title, description, image, duration,
       price || 0, rating || 0, included || [], country, hotel, flight_included || false,
-      vibe, interests || [], partners || [], translations || {}, effectiveCompanyId, price_currency || 'USD']);
+      vibe, interests || [], partners || [], translations || {}, effectiveCompanyId, price_currency || 'USD', pdf || null]);
 
     return res.json({ package: rows[0] });
   } catch (err) {
@@ -76,19 +76,19 @@ async function updatePackage(req, res) {
     const {
       type, category, title, description, image, duration,
       price, rating, included, country, hotel, flight_included,
-      vibe, interests, partners, translations, price_currency
+      vibe, interests, partners, translations, price_currency, pdf
     } = req.body;
 
     const { rows } = await pool.query(`
       UPDATE packages SET
         type=$1, category=$2, title=$3, description=$4, image=$5, duration=$6,
         price=$7, rating=$8, included=$9, country=$10, hotel=$11, flight_included=$12,
-        vibe=$13, interests=$14, partners=$15, translations=$16, price_currency=$17
-      WHERE id=$18
+        vibe=$13, interests=$14, partners=$15, translations=$16, price_currency=$17, pdf=$18
+      WHERE id=$19
       RETURNING *
     `, [type, category, title, description, image, duration,
       price, rating, included || [], country, hotel, flight_included || false,
-      vibe, interests || [], partners || [], translations || {}, price_currency || 'USD', id]);
+      vibe, interests || [], partners || [], translations || {}, price_currency || 'USD', pdf || null, id]);
 
     if (!rows.length) return res.status(404).json({ error: 'Package not found' });
     return res.json({ package: rows[0] });

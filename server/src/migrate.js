@@ -26,6 +26,7 @@ async function migrate() {
         interests TEXT[],
         partners TEXT[],
         translations JSONB,
+        pdf TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 

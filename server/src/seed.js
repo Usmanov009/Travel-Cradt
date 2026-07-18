@@ -215,8 +215,8 @@ async function seed() {
       await client.query(
         `INSERT INTO packages
           (local_id, type, category, title, description, image, duration, price, rating,
-           included, country, hotel, flight_included, vibe, video, interests, partners, translations, company_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
+           included, country, hotel, flight_included, vibe, video, interests, partners, translations, company_id, pdf)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)`,
         [
           pkg.local_id,
           pkg.type,
@@ -237,6 +237,7 @@ async function seed() {
           pkg.partners || null,
           JSON.stringify(pkg.translations || {}),
           companyId,
+          null,
         ]
       );
     }
