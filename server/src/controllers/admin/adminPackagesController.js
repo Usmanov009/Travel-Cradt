@@ -66,13 +66,17 @@ async function createPackage(req, res) {
       ? JSON.parse(interests || '[]')
       : (interests || []);
 
+    const parsedFlightIncluded = typeof flight_included === 'string'
+      ? flight_included === 'true'
+      : (flight_included || false);
+
     const { rows } = await pool.query(`
       INSERT INTO packages (type, category, title, description, image, duration, price, rating,
         included, country, hotel, flight_included, vibe, interests, partners, translations, company_id, price_currency, pdf)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
       RETURNING *
     `, [type || 'domestic', category, title, description, finalImage, duration,
-      price || 0, rating || 0, parsedIncluded, country, hotel, flight_included || false,
+      price || 0, rating || 0, parsedIncluded, country, hotel, parsedFlightIncluded,
       vibe, parsedInterests, partners || [], parsedTranslations, effectiveCompanyId, price_currency || 'USD', finalPdf]);
 
     return res.json({ package: rows[0] });
@@ -123,6 +127,9 @@ async function updatePackage(req, res) {
     const parsedInterests = typeof interests === 'string'
       ? JSON.parse(interests || '[]')
       : (interests || []);
+    const parsedFlightIncluded = typeof flight_included === 'string'
+      ? flight_included === 'true'
+      : (flight_included || false);
 
     const { rows } = await pool.query(`
       UPDATE packages SET
@@ -132,7 +139,7 @@ async function updatePackage(req, res) {
       WHERE id=$19
       RETURNING *
     `, [type, category, title, description, finalImage, duration,
-      price, rating, parsedIncluded, country, hotel, flight_included || false,
+      price, rating, parsedIncluded, country, hotel, parsedFlightIncluded,
       vibe, parsedInterests, partners || [], parsedTranslations, price_currency || 'USD', finalPdf, id]);
 
     if (!rows.length) return res.status(404).json({ error: 'Package not found' });
