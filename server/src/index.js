@@ -9,6 +9,7 @@ const cors = require('cors');
 const https = require('https');
 const http = require('http');
 const pool = require('./db');
+const { connectMongo, mongoose } = require('./mongodb');
 let createBot = () => null;
 let getTelegramUser = async () => null;
 try { ({ createBot, getTelegramUser } = require('./bot')); } catch (e) { console.warn('Bot yuklanmadi:', e.message); }
@@ -26,7 +27,8 @@ app.use(express.json());
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    return res.json({ ok: true, db: true });
+    const mongoConnected = mongoose.connection.readyState === 1;
+    return res.json({ ok: true, db: true, mongo: mongoConnected });
   } catch (err) {
     return res.status(503).json({ ok: false, db: false, error: err.message });
   }
@@ -339,6 +341,8 @@ app.listen(PORT, '0.0.0.0', () => {
   setupDatabase()
     .then(() => console.log('NeonDB connected and ready'))
     .catch(err => console.error('DB setup error:', err.message));
+
+  connectMongo().catch(err => console.error('MongoDB setup error:', err.message));
 
   const bot = createBot();
   if (bot) {
