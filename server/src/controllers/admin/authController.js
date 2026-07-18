@@ -29,8 +29,8 @@ async function login(req, res) {
       user: { id: user.id, email: user.email, name: user.name, role: user.role, company_id: user.company_id || null },
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('[admin login]', err.message);
+    return res.status(500).json({ error: 'Server error', detail: err.message });
   }
 }
 
