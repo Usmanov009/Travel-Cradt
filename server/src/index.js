@@ -321,6 +321,7 @@ async function setupDatabase() {
 // Serve built frontend in production
 const distPath = path.join(__dirname, '../../dist');
 app.use(express.static(distPath));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });

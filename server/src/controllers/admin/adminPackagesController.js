@@ -39,19 +39,41 @@ async function createPackage(req, res) {
       vibe, interests, partners, translations, company_id, price_currency, pdf
     } = req.body;
 
-    // Tur firma admini faqat o'z kompaniyasi nomidan paket yarata oladi
+    let finalImage = image || null;
+    let finalPdf = pdf || null;
+
+    if (req.files) {
+      if (req.files.image && req.files.image[0]) {
+        finalImage = '/uploads/' + req.files.image[0].filename;
+      }
+      if (req.files.pdf && req.files.pdf[0]) {
+        finalPdf = '/uploads/' + req.files.pdf[0].filename;
+      }
+    }
+
     const effectiveCompanyId = req.user.role === 'admin'
       ? (req.user.company_id || null)
       : (company_id || null);
+
+    const parsedTranslations = typeof translations === 'string'
+      ? JSON.parse(translations || '{}')
+      : (translations || {});
+
+    const parsedIncluded = typeof included === 'string'
+      ? JSON.parse(included || '[]')
+      : (included || []);
+    const parsedInterests = typeof interests === 'string'
+      ? JSON.parse(interests || '[]')
+      : (interests || []);
 
     const { rows } = await pool.query(`
       INSERT INTO packages (type, category, title, description, image, duration, price, rating,
         included, country, hotel, flight_included, vibe, interests, partners, translations, company_id, price_currency, pdf)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
       RETURNING *
-    `, [type || 'domestic', category, title, description, image, duration,
-      price || 0, rating || 0, included || [], country, hotel, flight_included || false,
-      vibe, interests || [], partners || [], translations || {}, effectiveCompanyId, price_currency || 'USD', pdf || null]);
+    `, [type || 'domestic', category, title, description, finalImage, duration,
+      price || 0, rating || 0, parsedIncluded, country, hotel, flight_included || false,
+      vibe, parsedInterests, partners || [], parsedTranslations, effectiveCompanyId, price_currency || 'USD', finalPdf]);
 
     return res.json({ package: rows[0] });
   } catch (err) {
@@ -79,6 +101,29 @@ async function updatePackage(req, res) {
       vibe, interests, partners, translations, price_currency, pdf
     } = req.body;
 
+    let finalImage = image || null;
+    let finalPdf = pdf || null;
+
+    if (req.files) {
+      if (req.files.image && req.files.image[0]) {
+        finalImage = '/uploads/' + req.files.image[0].filename;
+      }
+      if (req.files.pdf && req.files.pdf[0]) {
+        finalPdf = '/uploads/' + req.files.pdf[0].filename;
+      }
+    }
+
+    const parsedTranslations = typeof translations === 'string'
+      ? JSON.parse(translations || '{}')
+      : (translations || {});
+
+    const parsedIncluded = typeof included === 'string'
+      ? JSON.parse(included || '[]')
+      : (included || []);
+    const parsedInterests = typeof interests === 'string'
+      ? JSON.parse(interests || '[]')
+      : (interests || []);
+
     const { rows } = await pool.query(`
       UPDATE packages SET
         type=$1, category=$2, title=$3, description=$4, image=$5, duration=$6,
@@ -86,9 +131,9 @@ async function updatePackage(req, res) {
         vibe=$13, interests=$14, partners=$15, translations=$16, price_currency=$17, pdf=$18
       WHERE id=$19
       RETURNING *
-    `, [type, category, title, description, image, duration,
-      price, rating, included || [], country, hotel, flight_included || false,
-      vibe, interests || [], partners || [], translations || {}, price_currency || 'USD', pdf || null, id]);
+    `, [type, category, title, description, finalImage, duration,
+      price, rating, parsedIncluded, country, hotel, flight_included || false,
+      vibe, parsedInterests, partners || [], parsedTranslations, price_currency || 'USD', finalPdf, id]);
 
     if (!rows.length) return res.status(404).json({ error: 'Package not found' });
     return res.json({ package: rows[0] });

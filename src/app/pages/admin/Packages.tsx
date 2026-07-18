@@ -105,21 +105,51 @@ export default function AdminPackages() {
     }
     setSaving(true);
     try {
-      const body = {
-        ...form,
-        price: parseFloat(form.price as string) || 0,
-        price_currency: form.price_currency || 'USD',
-        included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
-        interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
-        destination: form.destination || null,
-        destination1: form.destination1 || null,
-        destination2: form.destination2 || null,
-        country1: form.country1 || null,
-        country2: form.country2 || null,
-      };
       const path = editPkg ? `/packages/${editPkg.id}` : '/packages';
       const method = editPkg ? 'PUT' : 'POST';
-      const res = await adminFetch(path, token!, { method, body: JSON.stringify(body) });
+
+      const hasFiles = imageFile || pdfFile;
+      let res: Response;
+
+      if (hasFiles) {
+        const fd = new FormData();
+        fd.append('type', form.type);
+        fd.append('category', form.category);
+        fd.append('title', form.title);
+        fd.append('description', form.description);
+        fd.append('duration', form.duration);
+        fd.append('price', String(parseFloat(form.price as string) || 0));
+        fd.append('price_currency', form.price_currency || 'USD');
+        fd.append('country', form.country);
+        fd.append('hotel', form.hotel);
+        fd.append('flight_included', String(form.flight_included));
+        fd.append('vibe', form.vibe);
+        fd.append('included', JSON.stringify(form.included.split(',').map((s: string) => s.trim()).filter(Boolean)));
+        fd.append('interests', JSON.stringify(form.interests.split(',').map((s: string) => s.trim()).filter(Boolean)));
+        fd.append('destination', form.destination || '');
+        fd.append('destination1', form.destination1 || '');
+        fd.append('destination2', form.destination2 || '');
+        fd.append('country1', form.country1 || '');
+        fd.append('country2', form.country2 || '');
+        if (imageFile) fd.append('image', imageFile);
+        if (pdfFile) fd.append('pdf', pdfFile);
+        res = await adminFetch(path, token!, { method, body: fd });
+      } else {
+        const body = {
+          ...form,
+          price: parseFloat(form.price as string) || 0,
+          price_currency: form.price_currency || 'USD',
+          included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
+          interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
+          destination: form.destination || null,
+          destination1: form.destination1 || null,
+          destination2: form.destination2 || null,
+          country1: form.country1 || null,
+          country2: form.country2 || null,
+        };
+        res = await adminFetch(path, token!, { method, body: JSON.stringify(body) });
+      }
+
       if (!res.ok) throw new Error('Saqlashda xatolik');
       setShowForm(false);
       load();
