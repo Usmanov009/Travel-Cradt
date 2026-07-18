@@ -8,6 +8,7 @@ const emptyForm = {
   flight_included: false, vibe: '', included: '', interests: '',
   destination: '', destination1: '', destination2: '', country1: '', country2: '',
   pdf: '',
+  mediaType: 'url',
 };
 
 export default function AdminPackages() {
@@ -23,6 +24,7 @@ export default function AdminPackages() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const load = () => {
     if (!token) return;
@@ -87,6 +89,7 @@ export default function AdminPackages() {
       country1: pkg.country1 || '',
       country2: pkg.country2 || '',
       pdf: pkg.pdf || '',
+      mediaType: pkg.pdf ? 'pdf' : 'url',
     });
     setShowForm(true);
   };
@@ -481,37 +484,85 @@ export default function AdminPackages() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rasm URL</label>
-                <input
+                <label className="block text-sm font-medium text-gray-700 mb-1">Media turi</label>
+                <select
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.image}
-                  onChange={e => setForm({...form, image: e.target.value})}
-                  placeholder="https://..."
-                />
+                  value={form.mediaType}
+                  onChange={e => {
+                    const type = e.target.value;
+                    setForm({...form, mediaType: type, image: '', pdf: ''});
+                    setImageFile(null);
+                    setPdfFile(null);
+                  }}
+                >
+                  <option value="url">URL</option>
+                  <option value="image">Rasm (PNG / JPG / SVG)</option>
+                  <option value="pdf">PDF hujjat</option>
+                </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">PDF hujjat (Tur dasturi)</label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={e => {
-                    const file = e.target.files?.[0] || null;
-                    setPdfFile(file);
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = () => setForm({...form, pdf: reader.result as string});
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {form.pdf && (
-                  <a href={form.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
-                    PDF oldindan ko'rish
-                  </a>
-                )}
-              </div>
+              {form.mediaType === 'url' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rasm URL</label>
+                  <input
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={form.image}
+                    onChange={e => setForm({...form, image: e.target.value})}
+                    placeholder="https://..."
+                  />
+                  {form.image && (
+                    <img src={form.image} alt="preview" className="w-full h-32 object-cover rounded mt-2" />
+                  )}
+                </div>
+              )}
+
+              {form.mediaType === 'image' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Rasm yuklash (PNG / JPG / SVG)</label>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    onChange={e => {
+                      const file = e.target.files?.[0] || null;
+                      setImageFile(file);
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => setForm({...form, image: reader.result as string});
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {form.image && (
+                    <img src={form.image} alt="preview" className="w-full h-32 object-cover rounded mt-2" />
+                  )}
+                </div>
+              )}
+
+              {form.mediaType === 'pdf' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PDF hujjat (Tur dasturi)</label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={e => {
+                      const file = e.target.files?.[0] || null;
+                      setPdfFile(file);
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => setForm({...form, pdf: reader.result as string});
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  {form.pdf && (
+                    <a href={form.pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                      PDF oldindan ko'rish
+                    </a>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nimalar kiradi (vergul bilan)</label>
