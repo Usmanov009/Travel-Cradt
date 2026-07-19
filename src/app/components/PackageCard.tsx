@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import { Star, Clock, Heart, Share2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { getAppLang } from "../utils/locale";
-import { formatDateRange } from "../utils/bookingDates";
 import { PackageImage } from "./PackageImage";
 import { CompanyInfoModal } from "./CompanyInfoModal";
 
@@ -143,7 +142,7 @@ export function PackageCard({
           </div>
           {startDate && endDate && (
             <span className="text-slate-400">
-              {formatDateRange(startDate, endDate)}
+              {startDate}  {endDate}
             </span>
           )}
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
