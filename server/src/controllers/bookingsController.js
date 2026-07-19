@@ -1,16 +1,11 @@
-const pool = require('../db');
+const { Booking, Package, TelegramUser } = require('../models');
 
 async function getBookings(req, res) {
   try {
     const { telegram_id } = req.query;
-    let query = 'SELECT * FROM bookings ORDER BY booked_at DESC LIMIT 500';
-    let params = [];
-    if (telegram_id) {
-      query = 'SELECT * FROM bookings WHERE telegram_id = $1 ORDER BY booked_at DESC LIMIT 500';
-      params.push(String(telegram_id));
-    }
-    const { rows } = await pool.query(query, params);
-    return res.json(rows);
+    const filter = telegram_id ? { telegram_id: String(telegram_id) } : {};
+    const bookings = await Booking.find(filter).sort({ booked_at: -1 }).limit(500);
+    return res.json(bookings);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -28,64 +23,68 @@ async function createBooking(req, res) {
     try {
       if (!resolvedTelegramId && phone) {
         const cleanPhone = String(phone).replace(/\s/g, '');
-        const tgUser = await pool.query(
-          `SELECT telegram_id FROM telegram_users WHERE REPLACE(phone, ' ', '') = $1 LIMIT 1`,
-          [cleanPhone]
-        );
-        if (tgUser.rows.length > 0) resolvedTelegramId = tgUser.rows[0].telegram_id;
+        const tgUser = await TelegramUser.findOne({ phone: cleanPhone });
+        if (tgUser) resolvedTelegramId = tgUser.telegram_id;
       }
     } catch {}
 
-    // If this is a telegram user, validate and use their registered data
     if (resolvedTelegramId) {
       try {
-        const registeredUser = await pool.query(
-          `SELECT name, phone FROM telegram_users WHERE telegram_id = $1`,
-          [String(resolvedTelegramId)]
-        );
-        if (registeredUser.rows.length > 0) {
-          const userData = registeredUser.rows[0];
-          // Use registered data from telegram
-          finalName = userData.name || name;
-          finalPhone = userData.phone || phone;
+        const registeredUser = await TelegramUser.findOne({ telegram_id: String(resolvedTelegramId) });
+        if (registeredUser) {
+          finalName = registeredUser.name || name;
+          finalPhone = registeredUser.phone || phone;
           console.log('[createBooking] Using Telegram registered data:', { finalName, finalPhone });
         }
       } catch {}
     }
 
-    // company_id: avval bodydan, yo'q bo'lsa paket nomi orqali topamiz
     let companyId = company_id || null;
     try {
       if (!companyId && title) {
-        const pkgRow = await pool.query(
-          'SELECT company_id FROM packages WHERE title = $1 AND company_id IS NOT NULL LIMIT 1',
-          [title]
-        );
-        if (pkgRow.rows.length > 0) companyId = pkgRow.rows[0].company_id;
+        const pkg = await Package.findOne({ title, company_id: { $ne: null } });
+        if (pkg) companyId = pkg.company_id;
       }
     } catch {}
 
     const safeCurrency = (price_currency === 'UZS' || price_currency === 'USD') ? price_currency : 'USD';
 
+    const doc = new Booking({
+      title,
+      type,
+      price,
+      price_currency: safeCurrency,
+      name: finalName,
+      phone: finalPhone,
+      guests: guests || 1,
+      days: days || 1,
+      status: status || 'pending',
+      telegram_id: resolvedTelegramId,
+      travel_date: travel_date || null,
+      company_id: companyId,
+      package_id: package_id || null,
+    });
+
     try {
-      const { rows } = await pool.query(
-        `INSERT INTO bookings (title, type, price, price_currency, name, phone, guests, days, status, telegram_id, travel_date, company_id, package_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
-         RETURNING *`,
-        [title, type, price, safeCurrency, finalName, finalPhone, guests || 1, days || 1, status || 'pending', resolvedTelegramId, travel_date || null, companyId, package_id || null]
-      );
-      console.log('[createBooking] saved id:', rows[0].id, 'company_id:', companyId, 'telegram_id:', resolvedTelegramId, 'package_id:', package_id);
-      return res.status(201).json(rows[0]);
+      const saved = await doc.save();
+      console.log('[createBooking] saved id:', saved.id, 'company_id:', companyId, 'telegram_id:', resolvedTelegramId, 'package_id:', package_id);
+      return res.status(201).json(saved);
     } catch (insertErr) {
       console.warn('[createBooking] full insert failed:', insertErr.message, '— trying fallback');
-      const { rows } = await pool.query(
-        `INSERT INTO bookings (title, type, price, price_currency, name, phone, guests, days, status)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-         RETURNING *`,
-        [title, type, price, safeCurrency, finalName, finalPhone, guests || 1, days || 1, status || 'pending']
-      );
-      console.log('[createBooking] fallback saved id:', rows[0].id);
-      return res.status(201).json(rows[0]);
+      const fallbackDoc = new Booking({
+        title,
+        type,
+        price,
+        price_currency: safeCurrency,
+        name: finalName,
+        phone: finalPhone,
+        guests: guests || 1,
+        days: days || 1,
+        status: status || 'pending',
+      });
+      const saved = await fallbackDoc.save();
+      console.log('[createBooking] fallback saved id:', saved.id);
+      return res.status(201).json(saved);
     }
   } catch (err) {
     console.error('[createBooking] error:', err.message);
@@ -97,19 +96,16 @@ async function updateBooking(req, res) {
   try {
     const id = req.params.id;
     const { status, name, phone, guests, days } = req.body;
-    const { rows } = await pool.query(
-      `UPDATE bookings
-       SET status = COALESCE($1, status),
-           name   = COALESCE($2, name),
-           phone  = COALESCE($3, phone),
-           guests = COALESCE($4, guests),
-           days   = COALESCE($5, days)
-       WHERE id = $6
-       RETURNING *`,
-      [status, name, phone, guests, days, id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Booking not found' });
-    return res.json(rows[0]);
+    const updateFields = {};
+    if (status !== undefined) updateFields.status = status;
+    if (name !== undefined) updateFields.name = name;
+    if (phone !== undefined) updateFields.phone = phone;
+    if (guests !== undefined) updateFields.guests = guests;
+    if (days !== undefined) updateFields.days = days;
+
+    const updated = await Booking.findOneAndUpdate({ id: Number(id) }, updateFields, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Booking not found' });
+    return res.json(updated);
   } catch (err) {
     return res.status(400).json({ error: err.message });
   }
@@ -118,8 +114,8 @@ async function updateBooking(req, res) {
 async function deleteBooking(req, res) {
   try {
     const { id } = req.params;
-    const { rows } = await pool.query('DELETE FROM bookings WHERE id = $1 RETURNING id', [id]);
-    if (!rows.length) return res.status(404).json({ error: 'Booking not found' });
+    const deleted = await Booking.findOneAndDelete({ id: Number(id) });
+    if (!deleted) return res.status(404).json({ error: 'Booking not found' });
     return res.json({ deleted: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });

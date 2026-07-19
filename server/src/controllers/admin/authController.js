@@ -1,4 +1,4 @@
-const pool = require('../../db');
+const { User } = require('../../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -9,8 +9,7 @@ async function login(req, res) {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
-    const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
-    const user = rows[0];
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
     if (user.blocked) return res.status(403).json({ error: 'User is blocked' });
 

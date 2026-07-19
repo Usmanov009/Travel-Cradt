@@ -1,6 +1,6 @@
 ﻿const { Telegraf, Markup, session } = require('telegraf');
 const Groq = require('groq-sdk');
-const pool = require('./db');
+const { TelegramUser, Booking, Package } = require('./models');
 const { normalizePhone } = require('./utils/phone');
 
 const MODEL = 'llama-3.3-70b-versatile';
@@ -37,11 +37,7 @@ function getWebAppUrl() {
 
 async function getTelegramUser(telegramId) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM telegram_users WHERE telegram_id = $1',
-      [String(telegramId)]
-    );
-    return rows[0] || null;
+    return await TelegramUser.findOne({ telegram_id: String(telegramId) });
   } catch {
     return null;
   }
@@ -49,14 +45,15 @@ async function getTelegramUser(telegramId) {
 
 async function saveTelegramUser(telegramId, name, phone, username, firstName) {
   try {
-    await pool.query(
-      `INSERT INTO telegram_users (telegram_id, name, phone, username, first_name)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (telegram_id) DO UPDATE
-         SET name = EXCLUDED.name,
-             phone = EXCLUDED.phone,
-             username = EXCLUDED.username`,
-      [String(telegramId), name, phone, username || null, firstName || null]
+    await TelegramUser.findOneAndUpdate(
+      { telegram_id: String(telegramId) },
+      {
+        name,
+        phone,
+        username: username || null,
+        first_name: firstName || null,
+      },
+      { new: true, upsert: true }
     );
   } catch (err) {
     console.error('Foydalanuvchi saqlash xatosi:', err.message);
@@ -65,10 +62,7 @@ async function saveTelegramUser(telegramId, name, phone, username, firstName) {
 
 async function getPackagesFromDB(type) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM packages WHERE type = $1 ORDER BY rating DESC LIMIT 8',
-      [type]
-    );
+    const rows = await Package.find({ type }).sort({ rating: -1 }).limit(8);
     return rows.length > 0 ? rows : null;
   } catch {
     return null;
@@ -77,11 +71,7 @@ async function getPackagesFromDB(type) {
 
 async function getPackageByLocalId(type, localId) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM packages WHERE type = $1 AND local_id = $2 LIMIT 1',
-      [type, localId]
-    );
-    return rows[0] || null;
+    return await Package.findOne({ type, local_id: localId });
   } catch {
     return null;
   }
@@ -89,11 +79,7 @@ async function getPackageByLocalId(type, localId) {
 
 async function getPackageByIdFromDB(id) {
   try {
-    const { rows } = await pool.query(
-      'SELECT * FROM packages WHERE id = $1 LIMIT 1',
-      [id]
-    );
-    return rows[0] || null;
+    return await Package.findOne({ id: parseInt(id) });
   } catch {
     return null;
   }
@@ -299,11 +285,10 @@ function createBot() {
     
     const telegramId = ctx.from.id;
     try {
-      const { rows } = await pool.query(
-        'SELECT * FROM bookings WHERE telegram_id = $1 ORDER BY created_at DESC LIMIT 10',
-        [String(telegramId)]
-      );
-      
+      const rows = await Booking.find({ telegram_id: String(telegramId) })
+        .sort({ created_at: -1 })
+        .limit(10);
+
       if (rows.length === 0) {
         await ctx.reply(
           '📋 *Sizning buyurtmalaringiz*\n\nSizda hali buyurtmalar mavjud emas.\n\n' +
@@ -312,7 +297,7 @@ function createBot() {
         );
         return;
       }
-      
+
       let message = '📋 *Sizning buyurtmalaringiz*\n\n';
       rows.forEach((b, i) => {
         const priceStr = b.price_currency === 'UZS' ? `${Number(b.price).toLocaleString()} so'm` : `$${Number(b.price).toLocaleString()}`;

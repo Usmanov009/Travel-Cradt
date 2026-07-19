@@ -1,18 +1,28 @@
-const pool = require('../../db');
+const { User, TourCompany, Package } = require('../../models');
 const bcrypt = require('bcryptjs');
 
 async function listAdmins(req, res) {
   try {
-    const { rows } = await pool.query(`
-      SELECT u.id, u.name, u.email, u.role, u.blocked, u.created_at,
-             u.company_id, tc.name AS company_name, tc.phone AS company_phone,
-             tc.status AS company_status
-      FROM users u
-      LEFT JOIN tour_companies tc ON u.company_id = tc.id
-      WHERE u.role = 'admin'
-      ORDER BY u.created_at DESC
-    `);
-    return res.json({ admins: rows });
+    const admins = await User.find({ role: 'admin' })
+      .sort({ created_at: -1 })
+      .select('id name email role blocked created_at company_id');
+    const result = await Promise.all(
+      admins.map(async (admin) => {
+        const a = admin.toObject();
+        if (a.company_id) {
+          const tc = await TourCompany.findOne({ id: a.company_id }).select('name phone status');
+          a.company_name = tc ? tc.name : null;
+          a.company_phone = tc ? tc.phone : null;
+          a.company_status = tc ? tc.status : null;
+        } else {
+          a.company_name = null;
+          a.company_phone = null;
+          a.company_status = null;
+        }
+        return a;
+      })
+    );
+    return res.json({ admins: result });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -23,7 +33,6 @@ async function listAdmins(req, res) {
 // 1) tour_companies jadvalida yangi firma yaratiladi
 // 2) users jadvalida shu firmaga bog'liq admin yaratiladi
 async function createAdmin(req, res) {
-  const client = await pool.connect();
   try {
     const { company_name, company_phone, company_address, email, password } = req.body;
 
@@ -31,94 +40,90 @@ async function createAdmin(req, res) {
     if (!email || !password) return res.status(400).json({ error: 'Email va parol talab qilinadi' });
     if (password.length < 6) return res.status(400).json({ error: "Parol kamida 6 ta belgi bo'lishi kerak" });
 
-    const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
-    if (existing.rows.length > 0) return res.status(400).json({ error: 'Bu email allaqachon mavjud' });
+    const normalizedEmail = email.toLowerCase();
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) return res.status(400).json({ error: 'Bu email allaqachon mavjud' });
 
-    await client.query('BEGIN');
+    const hash = await bcrypt.hash(password, 10);
 
     // 1. Tur firma yaratish
-    const companyRes = await client.query(
-      `INSERT INTO tour_companies (name, email, password_hash, phone, address, status)
-       VALUES ($1, $2, $3, $4, $5, 'approved')
-       RETURNING id, name`,
-      [company_name, email.toLowerCase(), await bcrypt.hash(password, 10), company_phone || null, company_address || null]
-    );
-    const company = companyRes.rows[0];
+    const company = new TourCompany({
+      name: company_name,
+      email: normalizedEmail,
+      password_hash: hash,
+      phone: company_phone || null,
+      address: company_address || null,
+      status: 'approved',
+    });
+    await company.save();
 
     // 2. Admin user yaratish (tur firma bilan bog'liq)
-    const hash = await bcrypt.hash(password, 10);
-    const userRes = await client.query(
-      `INSERT INTO users (name, email, password_hash, role, company_id)
-       VALUES ($1, $2, $3, 'admin', $4)
-       RETURNING id, name, email, role, company_id, created_at`,
-      [company_name, email.toLowerCase(), hash, company.id]
-    );
+    const user = new User({
+      name: company_name,
+      email: normalizedEmail,
+      password_hash: hash,
+      role: 'admin',
+      company_id: company.id,
+    });
+    await user.save();
 
-    await client.query('COMMIT');
-    return res.json({ admin: { ...userRes.rows[0], company_name: company.name } });
+    return res.json({
+      admin: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        company_id: user.company_id,
+        created_at: user.created_at,
+        company_name: company.name,
+      },
+    });
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
-  } finally {
-    client.release();
   }
 }
 
 async function deleteAdmin(req, res) {
-  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const { rows } = await client.query(
-      'SELECT role, company_id FROM users WHERE id = $1', [id]
-    );
-    if (!rows.length) return res.status(404).json({ error: 'Admin topilmadi' });
-    if (rows[0].role === 'super_admin') return res.status(403).json({ error: "Super adminni o'chirish mumkin emas" });
+    const user = await User.findOne({ id: Number(id) });
+    if (!user) return res.status(404).json({ error: 'Admin topilmadi' });
+    if (user.role === 'super_admin') return res.status(403).json({ error: "Super adminni o'chirish mumkin emas" });
 
-    await client.query('BEGIN');
-    await client.query('DELETE FROM users WHERE id = $1', [id]);
+    await User.findByIdAndDelete(user._id);
     // Bog'liq tur firmani ham o'chirish
-    if (rows[0].company_id) {
-      await client.query('UPDATE packages SET company_id = NULL WHERE company_id = $1', [rows[0].company_id]);
-      await client.query('DELETE FROM tour_companies WHERE id = $1', [rows[0].company_id]);
+    if (user.company_id) {
+      await Package.updateMany({ company_id: user.company_id }, { $set: { company_id: null } });
+      await TourCompany.findOneAndDelete({ id: user.company_id });
     }
-    await client.query('COMMIT');
     return res.json({ deleted: true });
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
-  } finally {
-    client.release();
   }
 }
 
 async function resetPassword(req, res) {
-  const client = await pool.connect();
   try {
     const { id } = req.params;
     const { password } = req.body;
     if (!password || password.length < 6) return res.status(400).json({ error: "Parol kamida 6 ta belgi bo'lishi kerak" });
 
-    const { rows } = await client.query('SELECT role, company_id FROM users WHERE id = $1', [id]);
-    if (!rows.length) return res.status(404).json({ error: 'Admin topilmadi' });
-    if (rows[0].role === 'super_admin') return res.status(403).json({ error: "Super admin paroli bu yerda o'zgartirilmaydi" });
+    const user = await User.findOne({ id: Number(id) });
+    if (!user) return res.status(404).json({ error: 'Admin topilmadi' });
+    if (user.role === 'super_admin') return res.status(403).json({ error: "Super admin paroli bu yerda o'zgartirilmaydi" });
 
     const hash = await bcrypt.hash(password, 10);
-    await client.query('BEGIN');
-    await client.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, id]);
+    await User.findByIdAndUpdate(user._id, { password_hash: hash });
     // Tur firma parolini ham yangilash
-    if (rows[0].company_id) {
-      await client.query('UPDATE tour_companies SET password_hash = $1 WHERE id = $2', [hash, rows[0].company_id]);
+    if (user.company_id) {
+      await TourCompany.findOneAndUpdate({ id: user.company_id }, { password_hash: hash });
     }
-    await client.query('COMMIT');
     return res.json({ updated: true });
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
-  } finally {
-    client.release();
   }
 }
 

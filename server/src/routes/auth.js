@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const pool = require('../db');
+const { User, TelegramUser } = require('../models');
 const { normalizePhone } = require('../utils/phone');
 
 const router = express.Router();
@@ -43,24 +43,18 @@ router.post('/register', async (req, res) => {
   if (password.length < 6) return res.status(400).json({ error: "Parol kamida 6 ta belgidan iborat bo'lsin" });
 
   const normalizedPhone = normalizePhone(phone);
-  const client = await pool.connect();
   try {
-    const exists = await client.query('SELECT id FROM users WHERE email = $1', [normalizedPhone]);
-    if (exists.rows.length > 0) return res.status(409).json({ error: "Bu telefon raqam allaqachon ro'yxatdan o'tgan" });
+    const exists = await User.findOne({ email: normalizedPhone });
+    if (exists) return res.status(409).json({ error: "Bu telefon raqam allaqachon ro'yxatdan o'tgan" });
 
     const hash = await bcrypt.hash(password, 10);
-    const result = await client.query(
-      `INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, 'user') RETURNING id, name, email, role`,
-      [name.trim(), normalizedPhone, hash]
-    );
-    const user = result.rows[0];
+    const user = new User({ name: name.trim(), email: normalizedPhone, password_hash: hash, role: 'user' });
+    await user.save();
     const token = jwt.sign({ id: user.id, phone: user.email, role: user.role }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: user.id, name: user.name, phone: user.email, role: user.role } });
   } catch (err) {
     console.error('Register error:', err.message);
     res.status(500).json({ error: "Server xatosi yuz berdi" });
-  } finally {
-    client.release();
   }
 });
 
@@ -69,10 +63,8 @@ router.post('/login', async (req, res) => {
   if (!phone || !password) return res.status(400).json({ error: "Telefon va parol kerak" });
 
   const normalizedPhone = normalizePhone(phone);
-  const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM users WHERE email = $1', [normalizedPhone]);
-    const user = result.rows[0];
+    const user = await User.findOne({ email: normalizedPhone });
     if (!user) return res.status(401).json({ error: "Telefon raqam yoki parol noto'g'ri" });
     if (user.blocked) return res.status(403).json({ error: "Hisobingiz bloklangan" });
 
@@ -84,8 +76,6 @@ router.post('/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err.message);
     res.status(500).json({ error: "Server xatosi yuz berdi" });
-  } finally {
-    client.release();
   }
 });
 
@@ -102,33 +92,34 @@ router.post('/telegram', async (req, res) => {
   if (!tgUser || !tgUser.id) return res.status(401).json({ error: "Telegram ma'lumotlari tasdiqlanmadi" });
 
   const telegramId = String(tgUser.id);
-  const client = await pool.connect();
   try {
-    let user = (await client.query('SELECT * FROM users WHERE telegram_id = $1', [telegramId])).rows[0];
+    let user = await User.findOne({ telegram_id: telegramId });
 
     if (!user) {
-      const profile = (await client.query(
-        'SELECT * FROM telegram_users WHERE telegram_id = $1',
-        [telegramId]
-      )).rows[0];
+      const profile = await TelegramUser.findOne({ telegram_id: telegramId });
 
       if (!profile || !profile.phone) {
         return res.status(404).json({ error: 'not_registered' });
       }
 
       const normalizedPhone = normalizePhone(profile.phone);
-      const byPhone = (await client.query('SELECT * FROM users WHERE email = $1', [normalizedPhone])).rows[0];
+      const byPhone = await User.findOne({ email: normalizedPhone });
 
       if (byPhone) {
-        await client.query('UPDATE users SET telegram_id = $1 WHERE id = $2', [telegramId, byPhone.id]);
-        user = { ...byPhone, telegram_id: telegramId };
+        byPhone.telegram_id = telegramId;
+        await byPhone.save();
+        user = byPhone;
       } else {
         const randomPass = crypto.randomBytes(32).toString('hex');
         const hash = await bcrypt.hash(randomPass, 10);
-        user = (await client.query(
-          `INSERT INTO users (name, email, password_hash, role, telegram_id) VALUES ($1, $2, $3, 'user', $4) RETURNING *`,
-          [profile.name || tgUser.first_name || 'Foydalanuvchi', normalizedPhone, hash, telegramId]
-        )).rows[0];
+        user = new User({
+          name: profile.name || tgUser.first_name || 'Foydalanuvchi',
+          email: normalizedPhone,
+          password_hash: hash,
+          role: 'user',
+          telegram_id: telegramId,
+        });
+        await user.save();
       }
     }
 
@@ -139,8 +130,6 @@ router.post('/telegram', async (req, res) => {
   } catch (err) {
     console.error('Telegram auth error:', err.message);
     res.status(500).json({ error: 'Server xatosi yuz berdi' });
-  } finally {
-    client.release();
   }
 });
 

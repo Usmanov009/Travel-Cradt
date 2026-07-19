@@ -1,30 +1,24 @@
-const pool = require('../../db');
+const { Package, TourCompany, Booking } = require('../../models');
 
 async function getPackages(req, res) {
   try {
-    let query;
-    let params = [];
-
+    let filter = {};
     if (req.user.role === 'admin' && req.user.company_id) {
-      query = `
-        SELECT p.*, tc.name AS company_name
-        FROM packages p
-        LEFT JOIN tour_companies tc ON p.company_id = tc.id
-        WHERE p.company_id = $1
-        ORDER BY p.created_at DESC
-      `;
-      params = [req.user.company_id];
-    } else {
-      query = `
-        SELECT p.*, tc.name AS company_name
-        FROM packages p
-        LEFT JOIN tour_companies tc ON p.company_id = tc.id
-        ORDER BY p.created_at DESC
-      `;
+      filter = { company_id: req.user.company_id };
     }
 
-    const { rows } = await pool.query(query, params);
-    return res.json({ packages: rows });
+    const packages = await Package.find(filter).sort({ created_at: -1 });
+
+    const companyIds = [...new Set(packages.map(p => p.company_id).filter(Boolean))];
+    const companies = await TourCompany.find({ id: { $in: companyIds } });
+    const companyMap = new Map(companies.map(c => [c.id, c]));
+
+    const result = packages.map(p => ({
+      ...p.toObject(),
+      company_name: companyMap.get(p.company_id)?.name || null,
+    }));
+
+    return res.json({ packages: result });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -65,21 +59,34 @@ async function createPackage(req, res) {
     const parsedInterests = typeof interests === 'string'
       ? JSON.parse(interests || '[]')
       : (interests || []);
-
     const parsedFlightIncluded = typeof flight_included === 'string'
       ? flight_included === 'true'
       : (flight_included || false);
 
-    const { rows } = await pool.query(`
-      INSERT INTO packages (type, category, title, description, image, duration, price, rating,
-        included, country, hotel, flight_included, vibe, interests, partners, translations, company_id, price_currency, pdf)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
-      RETURNING *
-    `, [type || 'domestic', category, title, description, finalImage, duration,
-      price || 0, rating || 0, parsedIncluded, country, hotel, parsedFlightIncluded,
-      vibe, parsedInterests, partners || [], parsedTranslations, effectiveCompanyId, price_currency || 'USD', finalPdf]);
+    const pkg = new Package({
+      type: type || 'domestic',
+      category,
+      title,
+      description,
+      image: finalImage,
+      duration,
+      price: price || 0,
+      rating: rating || 0,
+      included: parsedIncluded,
+      country,
+      hotel,
+      flight_included: parsedFlightIncluded,
+      vibe,
+      interests: parsedInterests,
+      partners: partners || [],
+      translations: parsedTranslations,
+      company_id: effectiveCompanyId,
+      price_currency: price_currency || 'USD',
+      pdf: finalPdf,
+    });
 
-    return res.json({ package: rows[0] });
+    await pkg.save();
+    return res.json({ package: pkg.toObject() });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -90,11 +97,10 @@ async function updatePackage(req, res) {
   try {
     const { id } = req.params;
 
-    // Tur firma admini faqat o'z paketlarini tahrirlashi mumkin
     if (req.user.role === 'admin' && req.user.company_id) {
-      const check = await pool.query('SELECT company_id FROM packages WHERE id = $1', [id]);
-      if (!check.rows.length) return res.status(404).json({ error: 'Package not found' });
-      if (check.rows[0].company_id !== req.user.company_id) {
+      const pkg = await Package.findOne({ id: parseInt(id) });
+      if (!pkg) return res.status(404).json({ error: 'Package not found' });
+      if (pkg.company_id !== req.user.company_id) {
         return res.status(403).json({ error: 'Bu paket sizga tegishli emas' });
       }
     }
@@ -131,19 +137,33 @@ async function updatePackage(req, res) {
       ? flight_included === 'true'
       : (flight_included || false);
 
-    const { rows } = await pool.query(`
-      UPDATE packages SET
-        type=$1, category=$2, title=$3, description=$4, image=$5, duration=$6,
-        price=$7, rating=$8, included=$9, country=$10, hotel=$11, flight_included=$12,
-        vibe=$13, interests=$14, partners=$15, translations=$16, price_currency=$17, pdf=$18
-      WHERE id=$19
-      RETURNING *
-    `, [type, category, title, description, finalImage, duration,
-      price, rating, parsedIncluded, country, hotel, parsedFlightIncluded,
-      vibe, parsedInterests, partners || [], parsedTranslations, price_currency || 'USD', finalPdf, id]);
+    const updated = await Package.findOneAndUpdate(
+      { id: parseInt(id) },
+      {
+        type: type || 'domestic',
+        category,
+        title,
+        description,
+        image: finalImage,
+        duration,
+        price: price || 0,
+        rating: rating || 0,
+        included: parsedIncluded,
+        country,
+        hotel,
+        flight_included: parsedFlightIncluded,
+        vibe,
+        interests: parsedInterests,
+        partners: partners || [],
+        translations: parsedTranslations,
+        price_currency: price_currency || 'USD',
+        pdf: finalPdf,
+      },
+      { new: true }
+    );
 
-    if (!rows.length) return res.status(404).json({ error: 'Package not found' });
-    return res.json({ package: rows[0] });
+    if (!updated) return res.status(404).json({ error: 'Package not found' });
+    return res.json({ package: updated.toObject() });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -154,17 +174,16 @@ async function deletePackage(req, res) {
   try {
     const { id } = req.params;
 
-    // Tur firma admini faqat o'z paketlarini o'chira oladi
     if (req.user.role === 'admin' && req.user.company_id) {
-      const check = await pool.query('SELECT company_id FROM packages WHERE id = $1', [id]);
-      if (!check.rows.length) return res.status(404).json({ error: 'Package not found' });
-      if (check.rows[0].company_id !== req.user.company_id) {
+      const pkg = await Package.findOne({ id: parseInt(id) });
+      if (!pkg) return res.status(404).json({ error: 'Package not found' });
+      if (pkg.company_id !== req.user.company_id) {
         return res.status(403).json({ error: 'Bu paket sizga tegishli emas' });
       }
     }
 
-    const { rows } = await pool.query('DELETE FROM packages WHERE id = $1 RETURNING id', [id]);
-    if (!rows.length) return res.status(404).json({ error: 'Package not found' });
+    const deleted = await Package.findOneAndDelete({ id: parseInt(id) });
+    if (!deleted) return res.status(404).json({ error: 'Package not found' });
     return res.json({ deleted: true });
   } catch (err) {
     console.error(err);
@@ -172,24 +191,25 @@ async function deletePackage(req, res) {
   }
 }
 
-// Super admin: paketni firmaga biriktirish yoki ajratish
 async function assignPackageCompany(req, res) {
   try {
     if (req.user.role !== 'super_admin') {
       return res.status(403).json({ error: 'Faqat super admin' });
     }
     const { id } = req.params;
-    const { company_id } = req.body; // null bo'lsa ajratiladi
+    const { company_id } = req.body;
     const newCompanyId = company_id || null;
 
-    const pkgRes = await pool.query('UPDATE packages SET company_id = $1 WHERE id = $2 RETURNING title', [newCompanyId, id]);
-    if (!pkgRes.rows.length) return res.status(404).json({ error: 'Package not found' });
+    const pkg = await Package.findOneAndUpdate(
+      { id: parseInt(id) },
+      { company_id: newCompanyId },
+      { new: true }
+    );
+    if (!pkg) return res.status(404).json({ error: 'Package not found' });
 
-    const pkgTitle = pkgRes.rows[0].title;
-    // Shu paketga tegishli bronlarni ham yangilash
-    await pool.query(
-      'UPDATE bookings SET company_id = $1 WHERE title = $2',
-      [newCompanyId, pkgTitle]
+    await Booking.updateMany(
+      { title: pkg.title },
+      { company_id: newCompanyId }
     ).catch(() => {});
 
     return res.json({ updated: true });

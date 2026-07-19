@@ -1,4 +1,4 @@
-const pool = require('../../db');
+const { Booking, Package, TelegramUser, User } = require('../../models');
 const https = require('https');
 
 function notifyTelegram(telegramId, text) {
@@ -34,78 +34,33 @@ async function getBookings(req, res) {
     const offset = parseInt(req.query.offset) || 0;
     const isCompanyAdmin = req.user.role === 'admin' && !!req.user.company_id;
 
-    let bookings, total;
+    let filter = {};
 
     if (isCompanyAdmin) {
-      // Tur firma admini: company_id YOKI paket nomi orqali moslashtirish
-      const baseWhere = `(b.company_id = $1 OR b.title IN (
-        SELECT p.title FROM packages p WHERE p.company_id = $1
-      ))`;
-      if (status) {
-        const cntRes = await pool.query(
-          `SELECT COUNT(DISTINCT b.id) FROM bookings b WHERE ${baseWhere} AND b.status = $2`,
-          [req.user.company_id, status]
-        );
-        total = parseInt(cntRes.rows[0].count);
-        const dataRes = await pool.query(
-          `SELECT DISTINCT b.* FROM bookings b WHERE ${baseWhere} AND b.status = $2
-           ORDER BY b.booked_at DESC LIMIT $3 OFFSET $4`,
-          [req.user.company_id, status, limit, offset]
-        );
-        bookings = dataRes.rows;
-      } else {
-        const cntRes = await pool.query(
-          `SELECT COUNT(DISTINCT b.id) FROM bookings b WHERE ${baseWhere}`,
-          [req.user.company_id]
-        );
-        total = parseInt(cntRes.rows[0].count);
-        const dataRes = await pool.query(
-          `SELECT DISTINCT b.* FROM bookings b WHERE ${baseWhere}
-           ORDER BY b.booked_at DESC LIMIT $2 OFFSET $3`,
-          [req.user.company_id, limit, offset]
-        );
-        bookings = dataRes.rows;
-      }
-    } else {
-      // Super admin: barcha bronlar
-      if (status) {
-        const cntRes = await pool.query('SELECT COUNT(*) FROM bookings WHERE status = $1', [status]);
-        total = parseInt(cntRes.rows[0].count);
-        const dataRes = await pool.query(
-          'SELECT * FROM bookings WHERE status = $1 ORDER BY booked_at DESC LIMIT $2 OFFSET $3',
-          [status, limit, offset]
-        );
-        bookings = dataRes.rows;
-      } else {
-        const cntRes = await pool.query('SELECT COUNT(*) FROM bookings');
-        total = parseInt(cntRes.rows[0].count);
-        const dataRes = await pool.query(
-          'SELECT * FROM bookings ORDER BY booked_at DESC LIMIT $1 OFFSET $2',
-          [limit, offset]
-        );
-        bookings = dataRes.rows;
-      }
+      const companyId = req.user.company_id;
+      const packages = await Package.find({ company_id: companyId }, { title: 1 });
+      const titles = packages.map(p => p.title);
+      filter.$or = [
+        { company_id: companyId },
+        { title: { $in: titles } }
+      ];
     }
+
+    if (status) {
+      filter.status = status;
+    }
+
+    const total = await Booking.countDocuments(filter);
+    const bookings = await Booking.find(filter)
+      .sort({ booked_at: -1 })
+      .skip(offset)
+      .limit(limit);
 
     return res.json({ bookings, total });
   } catch (err) {
     console.error('[getBookings] error:', err);
     return res.status(500).json({ error: err.message || 'Server error' });
   }
-}
-
-async function queryWithRetry(sql, params, retries = 2) {
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await pool.query(sql, params);
-    } catch (err) {
-      lastErr = err;
-      console.error(`[db] attempt ${i + 1}/${retries + 1} failed: ${err.message}`);
-      if (i < retries) await new Promise(r => setTimeout(r, 800 * (i + 1)));
-    }
-  }
-  throw lastErr;
 }
 
 async function updateBooking(req, res) {
@@ -116,27 +71,20 @@ async function updateBooking(req, res) {
     if (!status || !['pending', 'accepted', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    const { rows } = await queryWithRetry(
-      'UPDATE bookings SET status = $1 WHERE id = $2::integer RETURNING *',
-      [status, id]
-    );
-    if (!rows.length) return res.status(404).json({ error: 'Booking not found' });
 
-    const booking = rows[0];
+    const updated = await Booking.findOneAndUpdate({ id: Number(id) }, { status }, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Booking not found' });
 
-    // telegram_id yo'q bo'lsa, telefon orqali topamiz
+    const booking = updated;
+
     let tgId = booking.telegram_id;
     try {
       if (!tgId && booking.phone) {
         const cleanPhone = String(booking.phone).replace(/\s/g, '');
-        const tgUser = await pool.query(
-          `SELECT telegram_id FROM telegram_users WHERE REPLACE(phone, ' ', '') = $1 LIMIT 1`,
-          [cleanPhone]
-        );
-        if (tgUser.rows.length > 0) {
-          tgId = tgUser.rows[0].telegram_id;
-          // Keyingi safar tez topilishi uchun saqlaymiz
-          await pool.query('UPDATE bookings SET telegram_id = $1 WHERE id = $2', [tgId, booking.id]).catch(() => {});
+        const tgUser = await TelegramUser.findOne({ phone: cleanPhone });
+        if (tgUser) {
+          tgId = tgUser.telegram_id;
+           await Booking.findByIdAndUpdate(booking._id, { telegram_id: tgId }).catch(() => {});
         }
       }
     } catch {}
@@ -168,7 +116,6 @@ async function updateBooking(req, res) {
   }
 }
 
-// Super admin: bronni firmaga biriktirish
 async function assignBookingCompany(req, res) {
   try {
     if (req.user.role !== 'super_admin') {
@@ -176,11 +123,8 @@ async function assignBookingCompany(req, res) {
     }
     const { id } = req.params;
     const { company_id } = req.body;
-    const { rows } = await pool.query(
-      'UPDATE bookings SET company_id = $1 WHERE id = $2 RETURNING id',
-      [company_id || null, id]
-    );
-    if (!rows.length) return res.status(404).json({ error: 'Booking not found' });
+    const updated = await Booking.findOneAndUpdate({ id: Number(id) }, { company_id: company_id || null }, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Booking not found' });
     return res.json({ updated: true });
   } catch (err) {
     return res.status(500).json({ error: err.message });
