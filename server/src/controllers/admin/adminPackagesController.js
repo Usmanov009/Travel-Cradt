@@ -31,20 +31,10 @@ async function createPackage(req, res) {
     const {
       type, category, title, description, image, duration,
       price, rating, included, country, start_date, end_date, hotel, flight_included,
-      vibe, interests, partners, translations, company_id, price_currency, pdf
+      vibe, interests, partners, translations, company_id, price_currency
     } = req.body;
 
-    let finalImage = image || null;
-    let finalPdf = pdf || null;
-
-    if (req.files) {
-      if (req.files.image && req.files.image[0]) {
-        finalImage = '/uploads/' + req.files.image[0].filename;
-      }
-      if (req.files.pdf && req.files.pdf[0]) {
-        finalPdf = '/uploads/' + req.files.pdf[0].filename;
-      }
-    }
+    const finalImage = image || null;
 
     const effectiveCompanyId = req.user.role === 'admin'
       ? (req.user.company_id || null)
@@ -85,7 +75,6 @@ async function createPackage(req, res) {
       translations: parsedTranslations,
       company_id: effectiveCompanyId,
       price_currency: price_currency || 'USD',
-      pdf: finalPdf,
     });
 
     await pkg.save();
@@ -111,20 +100,10 @@ async function updatePackage(req, res) {
     const {
       type, category, title, description, image, duration,
       price, rating, included, country, start_date, end_date, hotel, flight_included,
-      vibe, interests, partners, translations, price_currency, pdf
+      vibe, interests, partners, translations, price_currency
     } = req.body;
 
-    let finalImage = image || null;
-    let finalPdf = pdf || null;
-
-    if (req.files) {
-      if (req.files.image && req.files.image[0]) {
-        finalImage = '/uploads/' + req.files.image[0].filename;
-      }
-      if (req.files.pdf && req.files.pdf[0]) {
-        finalPdf = '/uploads/' + req.files.pdf[0].filename;
-      }
-    }
+    const finalImage = image || null;
 
     const parsedTranslations = typeof translations === 'string'
       ? JSON.parse(translations || '{}')
@@ -162,7 +141,6 @@ async function updatePackage(req, res) {
         partners: partners || [],
         translations: parsedTranslations,
         price_currency: price_currency || 'USD',
-        pdf: finalPdf,
       },
       { new: true }
     );

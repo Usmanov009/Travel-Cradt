@@ -21,7 +21,6 @@ export default function AdminPackages() {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (form.type === 'domestic' && form.destination && !form.country) {
@@ -122,50 +121,30 @@ export default function AdminPackages() {
       const path = editPkg ? `/packages/${editPkg.id}` : '/packages';
       const method = editPkg ? 'PUT' : 'POST';
 
-      const hasFiles = !!imageFile;
-      let res: Response;
-
-      if (hasFiles) {
-        const fd = new FormData();
-        fd.append('type', form.type);
-        fd.append('category', form.category);
-        fd.append('title', form.title);
-        fd.append('description', form.description);
-        fd.append('duration', form.duration);
-        fd.append('price', String(parseFloat(form.price as string) || 0));
-        fd.append('price_currency', form.price_currency || 'USD');
-        fd.append('country', form.country);
-        fd.append('start_date', form.start_date);
-        fd.append('end_date', form.end_date);
-        fd.append('hotel', form.hotel);
-        fd.append('flight_included', String(form.flight_included));
-        fd.append('vibe', form.vibe);
-        fd.append('included', JSON.stringify(form.included.split(',').map((s: string) => s.trim()).filter(Boolean)));
-        fd.append('interests', JSON.stringify(form.interests.split(',').map((s: string) => s.trim()).filter(Boolean)));
-        fd.append('destination', form.destination || '');
-        fd.append('destination1', form.destination1 || '');
-        fd.append('destination2', form.destination2 || '');
-        fd.append('country1', form.country1 || '');
-        fd.append('country2', form.country2 || '');
-        if (imageFile) fd.append('image', imageFile);
-        res = await adminFetch(path, token!, { method, body: fd });
-      } else {
-        const body = {
-          ...form,
-          price: parseFloat(form.price as string) || 0,
-          price_currency: form.price_currency || 'USD',
-          included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
-          interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
-          destination: form.destination || null,
-          destination1: form.destination1 || null,
-          destination2: form.destination2 || null,
-          country1: form.country1 || null,
-          country2: form.country2 || null,
-          start_date: form.start_date || null,
-          end_date: form.end_date || null,
-        };
-        res = await adminFetch(path, token!, { method, body: JSON.stringify(body) });
-      }
+      const body = {
+        type: form.type,
+        category: form.category,
+        title: form.title,
+        description: form.description,
+        duration: form.duration,
+        price: parseFloat(form.price as string) || 0,
+        price_currency: form.price_currency || 'USD',
+        country: form.country,
+        image: form.image || null,
+        start_date: form.start_date || null,
+        end_date: form.end_date || null,
+        hotel: form.hotel,
+        flight_included: form.flight_included,
+        vibe: form.vibe,
+        included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
+        interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
+        destination: form.destination || null,
+        destination1: form.destination1 || null,
+        destination2: form.destination2 || null,
+        country1: form.country1 || null,
+        country2: form.country2 || null,
+      };
+      const res = await adminFetch(path, token!, { method, body: JSON.stringify(body) });
 
       if (!res.ok) throw new Error('Saqlashda xatolik');
       setShowForm(false);
@@ -560,11 +539,12 @@ export default function AdminPackages() {
                   accept="image/png,image/jpeg,image/svg+xml"
                   onChange={e => {
                     const file = e.target.files?.[0] || null;
-                    setImageFile(file);
                     if (file) {
                       const reader = new FileReader();
                       reader.onload = () => setForm({...form, image: reader.result as string});
                       reader.readAsDataURL(file);
+                    } else {
+                      setForm({...form, image: ''});
                     }
                   }}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
