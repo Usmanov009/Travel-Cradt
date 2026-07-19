@@ -25,3 +25,26 @@ export function bookingDateError(dateStr: string): string | null {
   }
   return null;
 }
+
+const MONTHS_UZ = [
+  "Yanvar","Fevral","Mart","Aprel","May","Iyun",
+  "Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"
+];
+
+export function formatDateDisplay(dateStr: string): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return dateStr;
+  const day = d.getDate();
+  const month = MONTHS_UZ[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month}, ${year}`;
+}
+
+export function formatDateRange(start: string, end: string): string {
+  if (!start && !end) return "";
+  if (start && end) {
+    return `${formatDateDisplay(start)} — ${formatDateDisplay(end)}`;
+  }
+  return formatDateDisplay(start || end);
+}

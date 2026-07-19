@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { Star, Clock, Heart, Share2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { getAppLang } from "../utils/locale";
+import { formatDateRange } from "../utils/bookingDates";
 import { PackageImage } from "./PackageImage";
 import { CompanyInfoModal } from "./CompanyInfoModal";
 
@@ -135,16 +136,23 @@ export function PackageCard({
           </div>
         )}
 
-        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4">
           <div className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span>{localDuration}</span>
           </div>
           {startDate && endDate && (
-            <div className="flex items-center gap-1">
-              <span>{startDate} - {endDate}</span>
-            </div>
+            <span className="text-slate-400">
+              {formatDateRange(startDate, endDate)}
+            </span>
           )}
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+            type === 'domestic' ? 'bg-green-100 text-green-700' :
+            type === 'international' ? 'bg-blue-100 text-blue-700' :
+            'bg-purple-100 text-purple-700'
+          }`}>
+            {type === 'domestic' ? "Ichki" : type === 'international' ? "Xalqaro" : "Combo"}
+          </span>
           {flightIncluded && (
             <div className="flex items-center gap-1 text-emerald-600">
               <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />

@@ -13,6 +13,7 @@ import { CompanyInfoModal } from "../components/CompanyInfoModal";
 import { DestinationMap } from "../components/DestinationMap";
 import { calculatePackagePrice } from "../utils/pricing";
 import type { StoredBooking } from "../utils/pricing";
+import { formatDateRange } from "../utils/bookingDates";
 
 export function PackageDetailPage() {
   const params = useParams();
@@ -291,9 +292,7 @@ export function PackageDetailPage() {
                 <div className="rounded-3xl border border-slate-200 p-5 bg-slate-50">
                   <p className="text-sm text-slate-500">Sana</p>
                   <p className="mt-3 text-lg font-semibold">
-                    {packageData.startDate && packageData.endDate
-                      ? `${packageData.startDate} — ${packageData.endDate}`
-                      : packageData.startDate || packageData.endDate}
+                    {formatDateRange(packageData.startDate || "", packageData.endDate || "")}
                   </p>
                 </div>
               )}
