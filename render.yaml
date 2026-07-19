@@ -2,11 +2,13 @@ services:
   - type: web
     name: travelcraft-ai
     runtime: node
-    buildCommand: npm install && npm run build && npm install --prefix server
+    buildCommand: npm install --include=dev && npm run build && npm install --prefix server
     startCommand: npm --prefix server start
     envVars:
       - key: NODE_VERSION
         value: 20
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
       - key: JWT_SECRET
         sync: false
       - key: ADMIN_EMAIL

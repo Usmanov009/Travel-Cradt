@@ -116,6 +116,13 @@ function keepAlive(url) {
   });
 }
 
+const distPath = path.join(__dirname, '../../dist');
+app.use(express.static(distPath));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server running on 0.0.0.0:${PORT}`);
 
