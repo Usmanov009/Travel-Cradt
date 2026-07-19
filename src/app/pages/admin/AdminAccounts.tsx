@@ -13,6 +13,7 @@ interface AdminUser {
   company_name: string | null;
   company_phone: string | null;
   company_status: string | null;
+  company_logo: string | null;
 }
 
 const emptyForm = {
@@ -21,6 +22,7 @@ const emptyForm = {
   company_address: '',
   email: '',
   password: '',
+  logo: null as File | null,
 };
 
 export default function AdminAccounts() {
@@ -55,9 +57,17 @@ export default function AdminAccounts() {
     setFormError(null);
     setSaving(true);
     try {
+      const fd = new FormData();
+      fd.append('company_name', form.company_name);
+      fd.append('company_phone', form.company_phone);
+      fd.append('company_address', form.company_address);
+      fd.append('email', form.email);
+      fd.append('password', form.password);
+      if (form.logo) fd.append('logo', form.logo);
+
       const res = await adminFetch('/admin-accounts', token!, {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: fd,
       });
       if (!res.ok) {
         const d = await res.json();
@@ -165,6 +175,18 @@ export default function AdminAccounts() {
                 placeholder="Shahar, ko'cha"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Logo (PNG, SVG)</label>
+              <input
+                type="file"
+                accept=".png,.svg,.jpg,.jpeg"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                onChange={e => {
+                  const file = e.target.files?.[0] || null;
+                  setForm(prev => ({ ...prev, logo: file }));
+                }}
+              />
+            </div>
 
             {/* Login ma'lumotlari */}
             <div className="col-span-full mt-2">
@@ -231,7 +253,16 @@ export default function AdminAccounts() {
             <tbody className="divide-y divide-gray-100">
               {admins.map(admin => (
                 <tr key={admin.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-medium text-gray-800">{admin.company_name || admin.name}</td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      {admin.company_logo ? (
+                        <img src={admin.company_logo} alt={admin.company_name || ''} className="w-10 h-10 rounded object-contain bg-gray-50 border" />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">LOGO</div>
+                      )}
+                      <span className="font-medium text-gray-800">{admin.company_name || admin.name}</span>
+                    </div>
+                  </td>
                   <td className="p-4 text-gray-600">{admin.email}</td>
                   <td className="p-4 text-gray-500">{admin.company_phone || '—'}</td>
                   <td className="p-4">

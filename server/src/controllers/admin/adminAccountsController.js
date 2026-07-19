@@ -1,5 +1,6 @@
 const { User, TourCompany, Package } = require('../../models');
 const bcrypt = require('bcryptjs');
+const { upload } = require('../../utils/upload');
 
 async function listAdmins(req, res) {
   try {
@@ -46,7 +47,11 @@ async function createAdmin(req, res) {
 
     const hash = await bcrypt.hash(password, 10);
 
-    // 1. Tur firma yaratish
+    let logo = null;
+    if (req.files && req.files.logo && req.files.logo[0]) {
+      logo = '/uploads/logos/' + req.files.logo[0].filename;
+    }
+
     const company = new TourCompany({
       name: company_name,
       email: normalizedEmail,
@@ -54,10 +59,10 @@ async function createAdmin(req, res) {
       phone: company_phone || null,
       address: company_address || null,
       status: 'approved',
+      logo: logo,
     });
     await company.save();
 
-    // 2. Admin user yaratish (tur firma bilan bog'liq)
     const user = new User({
       name: company_name,
       email: normalizedEmail,
@@ -76,6 +81,7 @@ async function createAdmin(req, res) {
         company_id: user.company_id,
         created_at: user.created_at,
         company_name: company.name,
+        company_logo: company.logo,
       },
     });
   } catch (err) {

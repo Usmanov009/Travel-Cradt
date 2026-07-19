@@ -1,7 +1,13 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
+
 const { Pool } = require('pg');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const { User, TourCompany, Package, Booking, TravelOffer, TelegramUser, getNextSequence } = require('./models');
+const { User, TourCompany, Package, Booking, TravelOffer, TelegramUser, getNextSequence } = require('../models');
 
 const PG_URL = process.env.DATABASE_URL;
 const MONGO_URL = process.env.MONGODB_URI;

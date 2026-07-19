@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 import { adminFetch } from '../../services/adminApi';
 
@@ -20,6 +20,11 @@ export default function AdminCompanies() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState<any>(null);
+  const [editing, setEditing] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ name: '', phone: '', address: '', website: '', description: '' });
+  const [editLogo, setEditLogo] = useState<File | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = () => {
     if (!token) return;
@@ -102,8 +107,17 @@ export default function AdminCompanies() {
               {filtered.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-800">{c.name}</div>
-                    <div className="text-gray-400 text-xs">{c.address || '—'}</div>
+                    <div className="flex items-center gap-3">
+                      {c.logo ? (
+                        <img src={c.logo} alt={c.name} className="w-10 h-10 rounded object-contain bg-gray-50 border" />
+                      ) : (
+                        <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center text-gray-400 text-xs">LOGO</div>
+                      )}
+                      <div>
+                        <div className="font-medium text-gray-800">{c.name}</div>
+                        <div className="text-gray-400 text-xs">{c.address || '—'}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-gray-600 text-xs">{c.email}</div>
@@ -135,12 +149,17 @@ export default function AdminCompanies() {
       </div>
 
       {/* Company detail modal */}
-      {selected && (
+      {selected && !editing && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-lg">
             <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{selected.name}</h2>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+              <div className="flex items-center gap-3">
+                {selected.logo ? (
+                  <img src={selected.logo} alt={selected.name} className="w-10 h-10 rounded object-contain bg-gray-50 border" />
+                ) : null}
+                <h2 className="text-lg font-semibold">{selected.name}</h2>
+              </div>
+              <button onClick={() => { setSelected(null); setEditing(null); }} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
             </div>
             <div className="p-6 space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
@@ -193,12 +212,110 @@ export default function AdminCompanies() {
                   </button>
                 )}
                 <button
-                  onClick={() => deleteCompany(selected.id)}
+                  onClick={() => {
+                    setEditing(selected);
+                    setEditForm({
+                      name: selected.name || '',
+                      phone: selected.phone || '',
+                      address: selected.address || '',
+                      website: selected.website || '',
+                      description: selected.description || '',
+                    });
+                    setEditLogo(null);
+                    setEditError(null);
+                  }}
+                  className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm hover:bg-blue-100"
+                >
+                  Tahrirlash
+                </button>
+                <button
+                  onClick={() => { if (confirm('Bu firmani o\'chirishni tasdiqlaysizmi?')) deleteCompany(selected.id); }}
                   className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200"
                 >
                   O'chirish
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit company modal */}
+      {editing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-lg">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Firmani tahrirlash</h2>
+              <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+            </div>
+            <div className="p-6 space-y-4">
+              {editError && <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{editError}</div>}
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setSaving(true);
+                setEditError(null);
+                try {
+                  const fd = new FormData();
+                  fd.append('name', editForm.name);
+                  fd.append('phone', editForm.phone);
+                  fd.append('address', editForm.address);
+                  fd.append('website', editForm.website);
+                  fd.append('description', editForm.description);
+                  if (editLogo) fd.append('logo', editLogo);
+
+                  const res = await adminFetch(`/companies/${editing.id}`, token!, {
+                    method: 'PUT',
+                    body: fd,
+                  });
+                  if (!res.ok) {
+                    const d = await res.json();
+                    throw new Error(d.error || 'Xatolik');
+                  }
+                  setEditing(null);
+                  load();
+                } catch (err: any) {
+                  setEditError(err.message);
+                } finally {
+                  setSaving(false);
+                }
+              }}>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Firma nomi</label>
+                  <input className="w-full p-2.5 border border-gray-300 rounded-lg" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                  <input className="w-full p-2.5 border border-gray-300 rounded-lg" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
+                  <input className="w-full p-2.5 border border-gray-300 rounded-lg" value={editForm.address} onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Veb-sayt</label>
+                  <input className="w-full p-2.5 border border-gray-300 rounded-lg" value={editForm.website} onChange={e => setEditForm(p => ({ ...p, website: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tavsif</label>
+                  <textarea className="w-full p-2.5 border border-gray-300 rounded-lg" value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} rows={3} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Logo (PNG, SVG)</label>
+                  <input type="file" accept=".png,.svg,.jpg,.jpeg" className="w-full p-2.5 border border-gray-300 rounded-lg text-sm"
+                    onChange={e => setEditLogo(e.target.files?.[0] || null)} />
+                  {editing.logo && !editLogo && (
+                    <div className="mt-2">
+                      <img src={editing.logo} alt="Current logo" className="w-16 h-16 object-contain border rounded" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400">
+                    {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+                  </button>
+                  <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg">Bekor</button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

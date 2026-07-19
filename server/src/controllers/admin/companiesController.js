@@ -1,4 +1,5 @@
 const { TourCompany, Package, Booking } = require('../../models');
+const { upload } = require('../../utils/upload');
 
 async function getCompanies(req, res) {
   try {
@@ -59,4 +60,33 @@ async function deleteCompany(req, res) {
   }
 }
 
-module.exports = { getCompanies, updateCompanyStatus, deleteCompany };
+async function updateCompany(req, res) {
+  try {
+    const { id } = req.params;
+    const { name, phone, address, website, description } = req.body;
+
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (phone !== undefined) updateFields.phone = phone;
+    if (address !== undefined) updateFields.address = address;
+    if (website !== undefined) updateFields.website = website;
+    if (description !== undefined) updateFields.description = description;
+
+    if (req.files && req.files.logo && req.files.logo[0]) {
+      updateFields.logo = '/uploads/logos/' + req.files.logo[0].filename;
+    }
+
+    const company = await TourCompany.findOneAndUpdate(
+      { id: Number(id) },
+      { $set: updateFields },
+      { new: true }
+    );
+    if (!company) return res.status(404).json({ error: 'Company not found' });
+    return res.json({ company });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+}
+
+module.exports = { getCompanies, updateCompanyStatus, deleteCompany, updateCompany };
