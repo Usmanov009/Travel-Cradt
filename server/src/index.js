@@ -145,6 +145,24 @@ app.listen(PORT, '0.0.0.0', async () => {
     console.error('MongoDB setup error:', err.message);
   }
 
+  try {
+    const bcrypt = require('bcryptjs');
+    const { User } = require('./models');
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin@1shu';
+    const existing = await User.findOne({ email: adminEmail });
+    if (!existing) {
+      const hash = await bcrypt.hash(adminPassword, 10);
+      await User.create({ name: 'Super Admin', email: adminEmail, password_hash: hash, role: 'super_admin' });
+      console.log('Super admin created:', adminEmail);
+    } else if (existing.role === 'admin') {
+      await User.updateOne({ email: adminEmail }, { role: 'super_admin', name: 'Super Admin' });
+      console.log('Upgraded to super_admin:', adminEmail);
+    }
+  } catch (err) {
+    console.error('Admin seed error:', err.message);
+  }
+
   const bot = createBot();
   if (bot) {
     console.log('Telegram bot ishga tushmoqda...');
