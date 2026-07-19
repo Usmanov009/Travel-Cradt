@@ -4,7 +4,7 @@ import { adminFetch } from '../../services/adminApi';
 
 const emptyForm = {
   type: 'domestic', category: '', title: '', description: '',
-  image: '', duration: '', price: '', price_currency: 'USD', country: '', hotel: '',
+  image: '', duration: '', price: '', price_currency: 'USD', country: '', start_date: '', end_date: '', hotel: '',
   flight_included: false, vibe: '', included: '', interests: '',
   destination: '', destination1: '', destination2: '', country1: '', country2: '',
   pdf: '',
@@ -25,6 +25,12 @@ export default function AdminPackages() {
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (form.type === 'domestic' && form.destination && !form.country) {
+      setForm({...form, country: "O'zbekiston"});
+    }
+  }, [form.type, form.destination]);
 
   const load = () => {
     if (!token) return;
@@ -78,6 +84,8 @@ export default function AdminPackages() {
       price: pkg.price || '',
       price_currency: pkg.price_currency || 'USD',
       country: pkg.country || '',
+      start_date: pkg.start_date ? new Date(pkg.start_date).toISOString().split('T')[0] : '',
+      end_date: pkg.end_date ? new Date(pkg.end_date).toISOString().split('T')[0] : '',
       hotel: pkg.hotel || '',
       flight_included: pkg.flight_included || false,
       vibe: pkg.vibe || '',
@@ -103,6 +111,17 @@ export default function AdminPackages() {
       alert('Xalqaro tur uchun mamlakat tanlangandan keyin manzilni kiriting.');
       return;
     }
+    if (form.type === 'domestic' && !form.start_date) {
+      alert('Ichki tur uchun boshlanish sanasini kiriting.');
+      return;
+    }
+    if (form.type === 'domestic' && !form.end_date) {
+      alert('Ichki tur uchun tugash sanasini kiriting.');
+      return;
+    }
+    if (form.type === 'domestic' && form.destination && !form.country) {
+      setForm({...form, country: "O'zbekiston"});
+    }
     setSaving(true);
     try {
       const path = editPkg ? `/packages/${editPkg.id}` : '/packages';
@@ -121,6 +140,8 @@ export default function AdminPackages() {
         fd.append('price', String(parseFloat(form.price as string) || 0));
         fd.append('price_currency', form.price_currency || 'USD');
         fd.append('country', form.country);
+        fd.append('start_date', form.start_date);
+        fd.append('end_date', form.end_date);
         fd.append('hotel', form.hotel);
         fd.append('flight_included', String(form.flight_included));
         fd.append('vibe', form.vibe);
@@ -146,6 +167,8 @@ export default function AdminPackages() {
           destination2: form.destination2 || null,
           country1: form.country1 || null,
           country2: form.country2 || null,
+          start_date: form.start_date || null,
+          end_date: form.end_date || null,
         };
         res = await adminFetch(path, token!, { method, body: JSON.stringify(body) });
       }
@@ -368,6 +391,29 @@ export default function AdminPackages() {
                   placeholder="3 kun"
                 />
               </div>
+
+              {(form.type === 'domestic' || form.type === 'international') && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Boshlanish sanasi *</label>
+                    <input
+                      type="date"
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.start_date}
+                      onChange={e => setForm({...form, start_date: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tugash sanasi *</label>
+                    <input
+                      type="date"
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={form.end_date}
+                      onChange={e => setForm({...form, end_date: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
 
               {form.type === 'domestic' && (
                 <div>

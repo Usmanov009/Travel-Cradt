@@ -16,6 +16,7 @@ async function getPackages(req, res) {
     const result = packages.map(p => ({
       ...p.toObject(),
       company_name: companyMap.get(p.company_id)?.name || null,
+      company_logo: companyMap.get(p.company_id)?.logo || null,
     }));
 
     return res.json({ packages: result });
@@ -29,7 +30,7 @@ async function createPackage(req, res) {
   try {
     const {
       type, category, title, description, image, duration,
-      price, rating, included, country, hotel, flight_included,
+      price, rating, included, country, start_date, end_date, hotel, flight_included,
       vibe, interests, partners, translations, company_id, price_currency, pdf
     } = req.body;
 
@@ -74,6 +75,8 @@ async function createPackage(req, res) {
       rating: rating || 0,
       included: parsedIncluded,
       country,
+      start_date: start_date || null,
+      end_date: end_date || null,
       hotel,
       flight_included: parsedFlightIncluded,
       vibe,
@@ -107,7 +110,7 @@ async function updatePackage(req, res) {
 
     const {
       type, category, title, description, image, duration,
-      price, rating, included, country, hotel, flight_included,
+      price, rating, included, country, start_date, end_date, hotel, flight_included,
       vibe, interests, partners, translations, price_currency, pdf
     } = req.body;
 
@@ -150,6 +153,8 @@ async function updatePackage(req, res) {
         rating: rating || 0,
         included: parsedIncluded,
         country,
+        start_date: start_date || null,
+        end_date: end_date || null,
         hotel,
         flight_included: parsedFlightIncluded,
         vibe,

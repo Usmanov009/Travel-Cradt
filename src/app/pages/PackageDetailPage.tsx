@@ -287,6 +287,16 @@ export function PackageDetailPage() {
                 <p className="text-sm text-slate-500">{t("detail.duration")}</p>
                 <p className="mt-3 text-lg font-semibold">{localDuration}</p>
               </div>
+              {(packageData.startDate || packageData.endDate) && (
+                <div className="rounded-3xl border border-slate-200 p-5 bg-slate-50">
+                  <p className="text-sm text-slate-500">Sana</p>
+                  <p className="mt-3 text-lg font-semibold">
+                    {packageData.startDate && packageData.endDate
+                      ? `${packageData.startDate} — ${packageData.endDate}`
+                      : packageData.startDate || packageData.endDate}
+                  </p>
+                </div>
+              )}
               {packageData.country && (
                 <div className="rounded-3xl border border-slate-200 p-5 bg-slate-50">
                   <p className="text-sm text-slate-500">{t("detail.destination")}</p>

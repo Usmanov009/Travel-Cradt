@@ -10,6 +10,8 @@ export interface TravelPackage {
   description: string;
   image: string;
   duration: string;
+  startDate?: string;
+  endDate?: string;
   price: number;
   priceCurrency?: string;
   rating: number;

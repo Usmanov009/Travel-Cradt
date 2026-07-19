@@ -88,12 +88,18 @@ export function resolvePackageMedia(
   id: number,
   fallbackImage: string,
 ): PackageMedia {
-  return (
-    PACKAGE_MEDIA[packageMediaKey(type, id)] ?? {
+  const hardcoded = PACKAGE_MEDIA[packageMediaKey(type, id)];
+  const hasDbImage = !!fallbackImage && fallbackImage.trim() !== '';
+  if (hasDbImage) {
+    return {
       cover: fallbackImage,
       gallery: [fallbackImage],
-    }
-  );
+    };
+  }
+  return hardcoded ?? {
+    cover: fallbackImage,
+    gallery: [fallbackImage],
+  };
 }
 
 /** Attach cover + gallery images to a package record */

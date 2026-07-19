@@ -13,6 +13,8 @@ interface PackageCardProps {
   description: string;
   image: string;
   duration: string;
+  startDate?: string;
+  endDate?: string;
   price: number;
   priceCurrency?: string;
   rating: number;
@@ -35,6 +37,8 @@ export function PackageCard({
   description,
   image,
   duration,
+  startDate,
+  endDate,
   price,
   priceCurrency,
   rating,
@@ -136,6 +140,11 @@ export function PackageCard({
             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span>{localDuration}</span>
           </div>
+          {startDate && endDate && (
+            <div className="flex items-center gap-1">
+              <span>{startDate} - {endDate}</span>
+            </div>
+          )}
           {flightIncluded && (
             <div className="flex items-center gap-1 text-emerald-600">
               <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
