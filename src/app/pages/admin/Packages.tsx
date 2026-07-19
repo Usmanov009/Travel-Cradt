@@ -577,21 +577,6 @@ export default function AdminPackages() {
                 </select>
               </div>
 
-              {form.mediaType === 'url' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rasm URL</label>
-                  <input
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.image}
-                    onChange={e => setForm({...form, image: e.target.value})}
-                    placeholder="https://..."
-                  />
-                  {form.image && (
-                    <img src={form.image} alt="preview" className="w-full h-32 object-cover rounded mt-2" />
-                  )}
-                </div>
-              )}
-
               {form.mediaType === 'image' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Rasm yuklash (PNG / JPG / SVG)</label>
