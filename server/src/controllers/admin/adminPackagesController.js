@@ -34,10 +34,7 @@ async function createPackage(req, res) {
       vibe, interests, partners, translations, company_id, price_currency
     } = req.body;
 
-    let finalImage = image || null;
-    if (req.file) {
-      finalImage = '/uploads/' + req.file.filename;
-    }
+    const finalImage = image || null;
 
     const effectiveCompanyId = req.user.role === 'admin'
       ? (req.user.company_id || null)
@@ -106,10 +103,7 @@ async function updatePackage(req, res) {
       vibe, interests, partners, translations, price_currency
     } = req.body;
 
-    let finalImage = image || null;
-    if (req.file) {
-      finalImage = '/uploads/' + req.file.filename;
-    }
+    const finalImage = image || null;
 
     const parsedTranslations = typeof translations === 'string'
       ? JSON.parse(translations || '{}')

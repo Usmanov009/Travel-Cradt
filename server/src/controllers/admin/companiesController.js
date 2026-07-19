@@ -1,5 +1,4 @@
 const { TourCompany, Package, Booking } = require('../../models');
-const { upload } = require('../../utils/upload');
 
 async function getCompanies(req, res) {
   try {
@@ -63,7 +62,7 @@ async function deleteCompany(req, res) {
 async function updateCompany(req, res) {
   try {
     const { id } = req.params;
-    const { name, phone, address, website, description } = req.body;
+    const { name, phone, address, website, description, logo } = req.body;
 
     const updateFields = {};
     if (name !== undefined) updateFields.name = name;
@@ -71,10 +70,7 @@ async function updateCompany(req, res) {
     if (address !== undefined) updateFields.address = address;
     if (website !== undefined) updateFields.website = website;
     if (description !== undefined) updateFields.description = description;
-
-    if (req.files && req.files.logo && req.files.logo[0]) {
-      updateFields.logo = '/uploads/logos/' + req.files.logo[0].filename;
-    }
+    if (logo !== undefined) updateFields.logo = logo;
 
     const company = await TourCompany.findOneAndUpdate(
       { id: Number(id) },

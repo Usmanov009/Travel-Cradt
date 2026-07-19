@@ -22,7 +22,7 @@ const emptyForm = {
   company_address: '',
   email: '',
   password: '',
-  logo: null as File | null,
+  logo: null as string | null,
 };
 
 export default function AdminAccounts() {
@@ -57,17 +57,19 @@ export default function AdminAccounts() {
     setFormError(null);
     setSaving(true);
     try {
-      const fd = new FormData();
-      fd.append('company_name', form.company_name);
-      fd.append('company_phone', form.company_phone);
-      fd.append('company_address', form.company_address);
-      fd.append('email', form.email);
-      fd.append('password', form.password);
-      if (form.logo) fd.append('logo', form.logo);
+      const body = {
+        company_name: form.company_name,
+        company_phone: form.company_phone,
+        company_address: form.company_address,
+        email: form.email,
+        password: form.password,
+        logo: form.logo,
+      };
 
       const res = await adminFetch('/admin-accounts', token!, {
         method: 'POST',
-        body: fd,
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
       });
       if (!res.ok) {
         const d = await res.json();
@@ -183,7 +185,13 @@ export default function AdminAccounts() {
                 className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 onChange={e => {
                   const file = e.target.files?.[0] || null;
-                  setForm(prev => ({ ...prev, logo: file }));
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => setForm(prev => ({ ...prev, logo: reader.result as string }));
+                    reader.readAsDataURL(file);
+                  } else {
+                    setForm(prev => ({ ...prev, logo: null }));
+                  }
                 }}
               />
             </div>

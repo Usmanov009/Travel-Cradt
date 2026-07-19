@@ -1,6 +1,5 @@
 const { User, TourCompany, Package } = require('../../models');
 const bcrypt = require('bcryptjs');
-const { upload } = require('../../utils/upload');
 
 async function listAdmins(req, res) {
   try {
@@ -35,7 +34,7 @@ async function listAdmins(req, res) {
 // 2) users jadvalida shu firmaga bog'liq admin yaratiladi
 async function createAdmin(req, res) {
   try {
-    const { company_name, company_phone, company_address, email, password } = req.body;
+    const { company_name, company_phone, company_address, email, password, logo } = req.body;
 
     if (!company_name) return res.status(400).json({ error: 'Tur firma nomi talab qilinadi' });
     if (!email || !password) return res.status(400).json({ error: 'Email va parol talab qilinadi' });
@@ -45,12 +44,7 @@ async function createAdmin(req, res) {
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(400).json({ error: 'Bu email allaqachon mavjud' });
 
-    const hash = await bcrypt.hash(password, 10);
-
-    let logo = null;
-    if (req.files && req.files.logo && req.files.logo[0]) {
-      logo = '/uploads/logos/' + req.files.logo[0].filename;
-    }
+    const hash = bcrypt.hash(password, 10);
 
     const company = new TourCompany({
       name: company_name,

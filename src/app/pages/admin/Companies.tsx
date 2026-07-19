@@ -22,7 +22,7 @@ export default function AdminCompanies() {
   const [selected, setSelected] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const [editForm, setEditForm] = useState({ name: '', phone: '', address: '', website: '', description: '' });
-  const [editLogo, setEditLogo] = useState<File | null>(null);
+  const [editLogo, setEditLogo] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -255,17 +255,19 @@ export default function AdminCompanies() {
                 setSaving(true);
                 setEditError(null);
                 try {
-                  const fd = new FormData();
-                  fd.append('name', editForm.name);
-                  fd.append('phone', editForm.phone);
-                  fd.append('address', editForm.address);
-                  fd.append('website', editForm.website);
-                  fd.append('description', editForm.description);
-                  if (editLogo) fd.append('logo', editLogo);
+                  const body = {
+                    name: editForm.name,
+                    phone: editForm.phone,
+                    address: editForm.address,
+                    website: editForm.website,
+                    description: editForm.description,
+                    logo: editLogo,
+                  };
 
                   const res = await adminFetch(`/companies/${editing.id}`, token!, {
                     method: 'PUT',
-                    body: fd,
+                    body: JSON.stringify(body),
+                    headers: { 'Content-Type': 'application/json' },
                   });
                   if (!res.ok) {
                     const d = await res.json();
@@ -302,10 +304,24 @@ export default function AdminCompanies() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Logo (PNG, SVG)</label>
                   <input type="file" accept=".png,.svg,.jpg,.jpeg" className="w-full p-2.5 border border-gray-300 rounded-lg text-sm"
-                    onChange={e => setEditLogo(e.target.files?.[0] || null)} />
+                    onChange={e => {
+                      const file = e.target.files?.[0] || null;
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => setEditLogo(reader.result as string);
+                        reader.readAsDataURL(file);
+                      } else {
+                        setEditLogo(null);
+                      }
+                    }} />
                   {editing.logo && !editLogo && (
                     <div className="mt-2">
                       <img src={editing.logo} alt="Current logo" className="w-16 h-16 object-contain border rounded" />
+                    </div>
+                  )}
+                  {editLogo && (
+                    <div className="mt-2">
+                      <img src={editLogo} alt="New logo preview" className="w-16 h-16 object-contain border rounded" />
                     </div>
                   )}
                 </div>
