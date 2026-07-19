@@ -597,7 +597,7 @@ export default function AdminPackages() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Rasm yuklash (PNG / JPG / SVG)</label>
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    accept="image/png,image/jpeg,image/svg+xml"
                     onChange={e => {
                       const file = e.target.files?.[0] || null;
                       setImageFile(file);
