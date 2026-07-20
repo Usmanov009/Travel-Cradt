@@ -412,14 +412,21 @@ export function PackageDetailPage() {
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">+998</span>
                 <div>
                   <p className="font-semibold">{t("detail.phone")}</p>
-                  <p className="text-sm text-slate-500">+998 XX XXX XX XX</p>
+                   <p className="text-sm text-slate-500">+998 90 202 10 51</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-slate-700">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-50 text-purple-700">✉</span>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">✈</span>
                 <div>
-                  <p className="font-semibold">{t("detail.email")}</p>
-                  <p className="text-sm text-slate-500">support@travelcraft.ai</p>
+                  <p className="font-semibold">Telegram</p>
+                  <a
+                    href="https://t.me/travelai_admin"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-slate-500 hover:text-blue-600 transition-colors"
+                  >
+                    admin
+                  </a>
                 </div>
               </div>
             </div>
