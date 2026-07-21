@@ -47,7 +47,7 @@ const emptyForm = {
   included: '',
   interests: '',
   destination: '',
-  comboStops: [{ country: '', destination: '' }] as { country: string; destination: string }[],
+  comboStops: [{ country: '', destination: '' }, { country: '', destination: '' }] as { country: string; destination: string }[],
 };
 
 export default function AdminPackages() {
@@ -182,7 +182,7 @@ export default function AdminPackages() {
   };
 
   const removeComboStop = (index: number) => {
-    if (form.comboStops.length <= 1) return;
+    if (form.comboStops.length <= 2) return;
     const updated = form.comboStops.filter((_, i) => i !== index);
     setForm({ ...form, comboStops: updated });
   };
@@ -579,7 +579,7 @@ export default function AdminPackages() {
                             onChange={e => updateComboStop(index, 'destination', e.target.value)}
                             placeholder="Samarqand"
                           />
-                          {form.comboStops.length > 1 && (
+                          {form.comboStops.length > 2 && (
                             <button
                               type="button"
                               onClick={() => removeComboStop(index)}

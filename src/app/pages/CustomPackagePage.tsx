@@ -98,6 +98,7 @@ export function CustomPackagePage() {
     days: 3,
     travelers: 2,
     budget: "",
+    price_currency: "USD",
     hotelType: "",
     transport: "",
     interests: [] as string[],
@@ -2227,26 +2228,39 @@ export function CustomPackagePage() {
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step4")}</h2>
-            <div>
-              <label className="block text-sm font-semibold mb-2">
-                {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.budget}
-                onChange={(e) => {
-                  setBudgetError("");
-                  setFormData({ ...formData, budget: e.target.value });
-                }}
-                className={`w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${budgetError ? 'border-red-400' : 'border-sky-200'}`}
-              >
-                <option value="">Byudjet turini tanlang...</option>
-                <option value="budget">Byudjet ($100–500 / ~1–5M so'm)</option>
-                <option value="mid-range">O'rta daraja ($500–1500 / ~5–15M so'm)</option>
-                <option value="luxury">Hashamatli ($1500+ / ~15M+ so'm)</option>
-              </select>
-              {budgetError && (
-                <p className="text-sm text-red-500 mt-1">{budgetError}</p>
-              )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formData.budget}
+                  onChange={(e) => {
+                    setBudgetError("");
+                    setFormData({ ...formData, budget: e.target.value });
+                  }}
+                  className={`w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${budgetError ? 'border-red-400' : 'border-sky-200'}`}
+                >
+                  <option value="">Byudjet turini tanlang...</option>
+                  <option value="budget">Byudjet</option>
+                  <option value="mid-range">O'rta daraja</option>
+                  <option value="luxury">Hashamatli</option>
+                </select>
+                {budgetError && (
+                  <p className="text-sm text-red-500 mt-1">{budgetError}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">Valyuta</label>
+                <select
+                  value={formData.price_currency || 'USD'}
+                  onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
+                  className="w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-sky-200"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="UZS">UZS (so'm)</option>
+                </select>
+              </div>
             </div>
           </div>
         );
@@ -2292,9 +2306,9 @@ export function CustomPackagePage() {
           : null;
 
         const budgetLabels: Record<string, string> = {
-          budget: 'Byudjet ($100–500 / ~1–5M so\'m)',
-          'mid-range': "O'rta ($500–1500 / ~5–15M so'm)",
-          luxury: 'Hashamatli ($1500+ / ~15M+ so\'m)',
+          budget: 'Byudjet',
+          'mid-range': "O'rta daraja",
+          luxury: 'Hashamatli',
         };
 
         return (
@@ -2580,11 +2594,12 @@ export function CustomPackagePage() {
                   <div>
                     <span className="text-slate-500">{t("customPackage.labels.budget")}:</span>
                     <span className="ml-2 font-semibold">
-                      {formData.budget === 'budget' ? 'Byudjet ($100–500 / ~1–5M so\'m)' :
-                       formData.budget === 'mid-range' ? "O'rta ($500–1500 / ~5–15M so'm)" :
-                       formData.budget === 'luxury' ? 'Hashamatli ($1500+ / ~15M+ so\'m)' :
+                      {formData.budget === 'budget' ? 'Byudjet' :
+                       formData.budget === 'mid-range' ? "O'rta daraja" :
+                       formData.budget === 'luxury' ? 'Hashamatli' :
                        formData.budget}
                     </span>
+                    <span className="ml-2 text-slate-400 text-sm">({formData.price_currency === 'UZS' ? 'so\'m' : '$'})</span>
                   </div>
                   <div>
                     <span className="text-slate-500">{t("customPackage.labels.hotel")}:</span>
