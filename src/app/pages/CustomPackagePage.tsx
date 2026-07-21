@@ -1653,12 +1653,9 @@ export function CustomPackagePage() {
       setDateError("");
     }
     if (currentStep === 4) {
-      if (!formData.budget) {
-        setBudgetError("Byudjet turini tanlang");
-        return;
-      }
-      if (!['budget', 'mid-range', 'luxury'].includes(formData.budget)) {
-        setBudgetError("Byudjet turini tanlang");
+      const amount = parseInt(formData.budget.replace(/[^0-9]/g, ''), 10);
+      if (!formData.budget || isNaN(amount) || amount <= 0) {
+        setBudgetError("Byudjetni kiriting");
         return;
       }
       setBudgetError("");
@@ -2225,11 +2222,6 @@ export function CustomPackagePage() {
         );
 
       case 4: {
-        const budgetTypes = [
-          { value: 'budget', label: 'Byudjet' },
-          { value: 'mid-range', label: "O'rta daraja" },
-          { value: 'luxury', label: 'Hashamatli' },
-        ];
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step4")}</h2>
@@ -2237,39 +2229,32 @@ export function CustomPackagePage() {
               <label className="block text-sm font-semibold mb-2">
                 {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                {budgetTypes.map((bt) => (
-                  <button
-                    key={bt.value}
-                    type="button"
-                    onClick={() => {
-                      setBudgetError("");
-                      setFormData({ ...formData, budget: bt.value });
-                    }}
-                    className={`w-full py-3 rounded-xl border-2 text-sm font-semibold transition ${
-                      formData.budget === bt.value
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300'
-                    }`}
-                  >
-                    {bt.label}
-                  </button>
-                ))}
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={50}
+                  max={50000}
+                  placeholder="Masalan: 1000"
+                  value={formData.budget.replace(/[^0-9]/g, '')}
+                  onChange={(e) => {
+                    setBudgetError('');
+                    const val = e.target.value ? `$${e.target.value}` : '';
+                    setFormData({ ...formData, budget: val });
+                  }}
+                  className={`flex-1 px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${budgetError ? 'border-red-400' : 'border-sky-200'}`}
+                />
+                <select
+                  value={formData.price_currency || 'USD'}
+                  onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
+                  className="w-32 px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-sky-200"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="UZS">UZS (so'm)</option>
+                </select>
               </div>
               {budgetError && (
                 <p className="text-sm text-red-500 mt-1">{budgetError}</p>
               )}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2">Valyuta</label>
-              <select
-                value={formData.price_currency || 'USD'}
-                onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
-                className="w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-sky-200"
-              >
-                <option value="USD">USD ($)</option>
-                <option value="UZS">UZS (so'm)</option>
-              </select>
             </div>
           </div>
         );
@@ -2603,12 +2588,8 @@ export function CustomPackagePage() {
                   <div>
                     <span className="text-slate-500">{t("customPackage.labels.budget")}:</span>
                     <span className="ml-2 font-semibold">
-                      {formData.budget === 'budget' ? 'Byudjet' :
-                       formData.budget === 'mid-range' ? "O'rta daraja" :
-                       formData.budget === 'luxury' ? 'Hashamatli' :
-                       formData.budget}
+                      {formData.budget ? `${formData.budget.replace(/[^0-9]/g, '')} ${formData.price_currency === 'UZS' ? 'so\'m' : '$'}` : '-'}
                     </span>
-                    <span className="ml-2 text-slate-400 text-sm">({formData.price_currency === 'UZS' ? 'so\'m' : '$'})</span>
                   </div>
                   <div>
                     <span className="text-slate-500">{t("customPackage.labels.hotel")}:</span>
