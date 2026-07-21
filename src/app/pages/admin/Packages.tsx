@@ -2,11 +2,52 @@
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 import { adminFetch } from '../../services/adminApi';
 
+const countryOptions = [
+  { value: 'USA', label: '🇺🇸 AQSH (USA)' },
+  { value: 'UAE', label: '🇦🇪 BAA (Dubai)' },
+  { value: 'UK', label: '🇬🇧 Buyuk Britaniya' },
+  { value: 'Egypt', label: '🇪🇬 Misr' },
+  { value: 'Indonesia', label: '🇮🇩 Indoneziya (Bali)' },
+  { value: 'Spain', label: '🇪🇸 Ispaniya' },
+  { value: 'Italy', label: '🇮🇹 Italiya' },
+  { value: 'Maldives', label: '🇲🇻 Maldiv orollari' },
+  { value: 'Malaysia', label: '🇲🇾 Malayziya' },
+  { value: 'Germany', label: '🇩🇪 Germaniya' },
+  { value: 'Thailand', label: '🇹🇭 Tailand' },
+  { value: 'Turkey', label: '🇹🇷 Turkiya' },
+  { value: 'France', label: '🇫🇷 Fransiya' },
+  { value: 'South Korea', label: '🇰🇷 Janubiy Koreya' },
+  { value: 'Japan', label: '🇯🇵 Yaponiya' },
+  { value: 'Greece', label: '🇬🇷 Gretsiya' },
+  { value: 'Switzerland', label: '🇨🇭 Shveytsariya' },
+  { value: 'China', label: '🇨🇳 Xitoy' },
+  { value: 'India', label: '🇮🇳 Hindiston' },
+  { value: 'Saudi Arabia', label: '🇸🇦 Saudiya Arabistoni' },
+  { value: 'Qatar', label: '🇶🇦 Qatar' },
+  { value: 'Kazakhstan', label: '🇰🇿 Qozog\'iston' },
+  { value: 'Kyrgyzstan', label: '🇰🇬 Qirg\'iziston' },
+  { value: 'Tajikistan', label: '🇹🇯 Tojikiston' },
+  { value: 'Azerbaijan', label: '🇦🇿 Ozarbayjon' },
+];
+
 const emptyForm = {
-  type: 'domestic', category: '', title: '', description: '',
-  image: '', duration: '', price: '', price_currency: 'USD', country: '', start_date: '', end_date: '', hotel: '',
-  flight_included: false, vibe: '', included: '', interests: '',
-  destination: '', destination1: '', destination2: '', country1: '', country2: '',
+  type: 'domestic',
+  category: '',
+  title: '',
+  description: '',
+  image: '',
+  duration: '',
+  price: '',
+  price_currency: 'USD',
+  country: '',
+  valid_dates: [] as string[],
+  hotel: '',
+  flight_included: false,
+  vibe: '',
+  included: '',
+  interests: '',
+  destination: '',
+  comboStops: [{ country: '', destination: '' }] as { country: string; destination: string }[],
 };
 
 export default function AdminPackages() {
@@ -21,10 +62,11 @@ export default function AdminPackages() {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
+  const [tempDate, setTempDate] = useState('');
 
   useEffect(() => {
     if (form.type === 'domestic' && form.destination && !form.country) {
-      setForm({...form, country: "O'zbekiston"});
+      setForm({ ...form, country: "O'zbekiston" });
     }
   }, [form.type, form.destination]);
 
@@ -70,6 +112,16 @@ export default function AdminPackages() {
 
   const openEdit = (pkg: any) => {
     setEditPkg(pkg);
+    const comboStops = [];
+    if (pkg.country1 || pkg.destination1) {
+      comboStops.push({ country: pkg.country1 || '', destination: pkg.destination1 || '' });
+    }
+    if (pkg.country2 || pkg.destination2) {
+      comboStops.push({ country: pkg.country2 || '', destination: pkg.destination2 || '' });
+    }
+    if (comboStops.length === 0) {
+      comboStops.push({ country: '', destination: '' });
+    }
     setForm({
       type: pkg.type || 'domestic',
       category: pkg.category || '',
@@ -80,20 +132,59 @@ export default function AdminPackages() {
       price: pkg.price || '',
       price_currency: pkg.price_currency || 'USD',
       country: pkg.country || '',
-      start_date: pkg.start_date ? new Date(pkg.start_date).toISOString().split('T')[0] : '',
-      end_date: pkg.end_date ? new Date(pkg.end_date).toISOString().split('T')[0] : '',
+      valid_dates: pkg.valid_dates?.length
+        ? pkg.valid_dates.map((d: Date) => new Date(d).toISOString().split('T')[0])
+        : (pkg.start_date && pkg.end_date
+            ? [new Date(pkg.start_date).toISOString().split('T')[0], new Date(pkg.end_date).toISOString().split('T')[0]]
+            : []),
       hotel: pkg.hotel || '',
       flight_included: pkg.flight_included || false,
       vibe: pkg.vibe || '',
       included: (pkg.included || []).join(', '),
       interests: (pkg.interests || []).join(', '),
       destination: pkg.destination || '',
-      destination1: pkg.destination1 || '',
-      destination2: pkg.destination2 || '',
-      country1: pkg.country1 || '',
-      country2: pkg.country2 || '',
+      comboStops,
     });
     setShowForm(true);
+  };
+
+  const addValidDate = () => {
+    if (!tempDate) return;
+    if (form.valid_dates.includes(tempDate)) {
+      setTempDate('');
+      return;
+    }
+    setForm({
+      ...form,
+      valid_dates: [...form.valid_dates, tempDate].sort(),
+    });
+    setTempDate('');
+  };
+
+  const removeValidDate = (date: string) => {
+    setForm({
+      ...form,
+      valid_dates: form.valid_dates.filter((d) => d !== date),
+    });
+  };
+
+  const addComboStop = () => {
+    setForm({
+      ...form,
+      comboStops: [...form.comboStops, { country: '', destination: '' }],
+    });
+  };
+
+  const updateComboStop = (index: number, field: 'country' | 'destination', value: string) => {
+    const updated = [...form.comboStops];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, comboStops: updated });
+  };
+
+  const removeComboStop = (index: number) => {
+    if (form.comboStops.length <= 1) return;
+    const updated = form.comboStops.filter((_, i) => i !== index);
+    setForm({ ...form, comboStops: updated });
   };
 
   const save = async () => {
@@ -101,27 +192,30 @@ export default function AdminPackages() {
       alert('Xalqaro tur uchun avval mamlakatni tanlang.');
       return;
     }
-    if (form.type === 'international' && form.country && !form.destination) {
-      alert('Xalqaro tur uchun mamlakat tanlangandan keyin manzilni kiriting.');
+    if (form.type === 'domestic' && form.valid_dates.length === 0) {
+      alert('Ichki tur uchun kamida bitta sana tanlang.');
       return;
     }
-    if (form.type === 'domestic' && !form.start_date) {
-      alert('Ichki tur uchun boshlanish sanasini kiriting.');
+    if (form.type === 'international' && form.valid_dates.length === 0) {
+      alert('Xalqaro tur uchun kamida bitta sana tanlang.');
       return;
     }
-    if (form.type === 'domestic' && !form.end_date) {
-      alert('Ichki tur uchun tugash sanasini kiriting.');
-      return;
+    if (form.type === 'combo') {
+      const validStops = form.comboStops.filter((s) => s.country && s.destination);
+      if (validStops.length === 0) {
+        alert('Combo tur uchun kamida bitta mamlakat va manzil kiriting.');
+        return;
+      }
     }
     if (form.type === 'domestic' && form.destination && !form.country) {
-      setForm({...form, country: "O'zbekiston"});
+      setForm({ ...form, country: "O'zbekiston" });
     }
     setSaving(true);
     try {
       const path = editPkg ? `/packages/${editPkg.id}` : '/packages';
       const method = editPkg ? 'PUT' : 'POST';
 
-      const body = {
+      const body: any = {
         type: form.type,
         category: form.category,
         title: form.title,
@@ -130,20 +224,28 @@ export default function AdminPackages() {
         price: parseFloat(form.price as string) || 0,
         price_currency: form.price_currency || 'USD',
         country: form.country,
+        valid_dates: form.valid_dates,
+        start_date: form.valid_dates[0] || null,
+        end_date: form.valid_dates[form.valid_dates.length - 1] || null,
         image: form.image || null,
-        start_date: form.start_date || null,
-        end_date: form.end_date || null,
         hotel: form.hotel,
         flight_included: form.flight_included,
         vibe: form.vibe,
         included: form.included.split(',').map((s: string) => s.trim()).filter(Boolean),
         interests: form.interests.split(',').map((s: string) => s.trim()).filter(Boolean),
         destination: form.destination || null,
-        destination1: form.destination1 || null,
-        destination2: form.destination2 || null,
-        country1: form.country1 || null,
-        country2: form.country2 || null,
+        company_id: editPkg ? editPkg.company_id : null,
       };
+
+      if (form.type === 'combo') {
+        const stops = form.comboStops.filter((s) => s.country);
+        body.country1 = stops[0]?.country || null;
+        body.country2 = stops[1]?.country || null;
+        body.destination1 = stops[0]?.destination || null;
+        body.destination2 = stops[1]?.destination || null;
+        body.comboStops = stops;
+      }
+
       const res = await adminFetch(path, token!, { method, body: JSON.stringify(body) });
 
       if (!res.ok) throw new Error('Saqlashda xatolik');
@@ -307,7 +409,7 @@ export default function AdminPackages() {
                   <select
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.type}
-                    onChange={e => setForm({...form, type: e.target.value})}
+                    onChange={e => setForm({ ...form, type: e.target.value })}
                   >
                     <option value="domestic">Ichki (Domestic)</option>
                     <option value="international">Xalqaro (International)</option>
@@ -319,7 +421,7 @@ export default function AdminPackages() {
                   <select
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.category}
-                    onChange={e => setForm({...form, category: e.target.value})}
+                    onChange={e => setForm({ ...form, category: e.target.value })}
                   >
                     <option value="">Tanlang...</option>
                     <option value="historical">Tarixiy</option>
@@ -339,7 +441,7 @@ export default function AdminPackages() {
                 <input
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.title}
-                  onChange={e => setForm({...form, title: e.target.value})}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
                   placeholder="Samarkand Heritage Tour"
                 />
               </div>
@@ -350,7 +452,7 @@ export default function AdminPackages() {
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                   value={form.description}
-                  onChange={e => setForm({...form, description: e.target.value})}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder="Tur haqida qisqa ma'lumot..."
                 />
               </div>
@@ -360,31 +462,51 @@ export default function AdminPackages() {
                 <input
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.duration}
-                  onChange={e => setForm({...form, duration: e.target.value})}
+                  onChange={e => setForm({ ...form, duration: e.target.value })}
                   placeholder="3 kun"
                 />
               </div>
 
               {(form.type === 'domestic' || form.type === 'international') && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Boshlanish sanasi *</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amal qilish sanalari *</label>
+                  <div className="flex gap-2 mb-2">
                     <input
                       type="date"
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={form.start_date}
-                      onChange={e => setForm({...form, start_date: e.target.value})}
+                      value={tempDate}
+                      onChange={e => setTempDate(e.target.value)}
                     />
+                    <button
+                      type="button"
+                      onClick={addValidDate}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap"
+                    >
+                      Qo'shish
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tugash sanasi *</label>
-                    <input
-                      type="date"
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={form.end_date}
-                      onChange={e => setForm({...form, end_date: e.target.value})}
-                    />
-                  </div>
+                  {form.valid_dates.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {form.valid_dates.map((date) => (
+                        <span
+                          key={date}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                        >
+                          {date}
+                          <button
+                            type="button"
+                            onClick={() => removeValidDate(date)}
+                            className="text-blue-400 hover:text-blue-600 font-bold"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {form.valid_dates.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-1">Tur ishlaydigan sanalarni tanlang.</p>
+                  )}
                 </div>
               )}
 
@@ -394,7 +516,7 @@ export default function AdminPackages() {
                   <input
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.destination}
-                    onChange={e => setForm({...form, destination: e.target.value})}
+                    onChange={e => setForm({ ...form, destination: e.target.value })}
                     placeholder="Samarqand"
                   />
                 </div>
@@ -407,94 +529,76 @@ export default function AdminPackages() {
                     <select
                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       value={form.country}
-                      onChange={e => setForm({...form, country: e.target.value})}
+                      onChange={e => setForm({ ...form, country: e.target.value })}
                     >
                       <option value="">Mamlakat tanlang...</option>
-                      <option value="USA">🇺🇸 AQSH (USA)</option>
-                      <option value="UAE">🇦🇪 BAA (Dubai)</option>
-                      <option value="UK">🇬🇧 Buyuk Britaniya</option>
-                      <option value="Egypt">🇪🇬 Misr</option>
-                      <option value="Indonesia">🇮🇩 Indoneziya (Bali)</option>
-                      <option value="Spain">🇪🇸 Ispaniya</option>
-                      <option value="Italy">🇮🇹 Italiya</option>
-                      <option value="Maldives">🇲🇻 Maldiv orollari</option>
-                      <option value="Malaysia">🇲🇾 Malayziya</option>
-                      <option value="Germany">🇩🇪 Germaniya</option>
-                      <option value="Thailand">🇹🇭 Tailand</option>
-                      <option value="Turkey">🇹🇷 Turkiya</option>
-                      <option value="France">🇫🇷 Fransiya</option>
-                      <option value="South Korea">🇰🇷 Janubiy Koreya</option>
-                      <option value="Japan">🇯🇵 Yaponiya</option>
-                      <option value="Greece">🇬🇷 Gretsiya</option>
-                      <option value="Switzerland">🇨🇭 Shveytsariya</option>
-                      <option value="China">🇨🇳 Xitoy</option>
-                      <option value="India">🇮🇳 Hindiston</option>
-                      <option value="Saudi Arabia">🇸🇦 Saudiya Arabistoni</option>
-                      <option value="Qatar">🇶🇦 Qatar</option>
-                      <option value="Kazakhstan">🇰🇿 Qozog'iston</option>
-                      <option value="Kyrgyzstan">🇰🇬 Qirg'iziston</option>
-                      <option value="Tajikistan">🇹🇯 Tojikiston</option>
-                      <option value="Azerbaijan">🇦🇿 Ozarbayjon</option>
+                      {countryOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
-                     <input
-                       disabled={!form.country}
-                       className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                       value={form.destination}
-                       onChange={e => setForm({...form, destination: e.target.value})}
-                       placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
-                     />
-                     {!form.country && (
-                       <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
-                     )}
+                    <input
+                      disabled={!form.country}
+                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      value={form.destination}
+                      onChange={e => setForm({ ...form, destination: e.target.value })}
+                      placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
+                    />
+                    {!form.country && (
+                      <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
+                    )}
                   </div>
                 </div>
               )}
 
               {form.type === 'combo' && (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat 1 *</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={form.country1}
-                        onChange={e => setForm({...form, country1: e.target.value})}
-                        placeholder="O'zbekiston"
-                      />
+                  {form.comboStops.map((stop, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat {index + 1} *</label>
+                        <select
+                          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          value={stop.country}
+                          onChange={e => updateComboStop(index, 'country', e.target.value)}
+                        >
+                          <option value="">Mamlakat tanlang...</option>
+                          {countryOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Manzil {index + 1} *</label>
+                        <div className="flex gap-2">
+                          <input
+                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={stop.destination}
+                            onChange={e => updateComboStop(index, 'destination', e.target.value)}
+                            placeholder="Samarqand"
+                          />
+                          {form.comboStops.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeComboStop(index)}
+                              className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat 2 *</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={form.country2}
-                        onChange={e => setForm({...form, country2: e.target.value})}
-                        placeholder="O'zbekiston"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 1 *</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={form.destination1}
-                        onChange={e => setForm({...form, destination1: e.target.value})}
-                        placeholder="Samarqand"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil 2 *</label>
-                      <input
-                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={form.destination2}
-                        onChange={e => setForm({...form, destination2: e.target.value})}
-                        placeholder="Buxoro"
-                      />
-                    </div>
-                  </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addComboStop}
+                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                  >
+                    + Qo'shimcha manzil qo'shish
+                  </button>
                 </>
               )}
 
@@ -505,7 +609,7 @@ export default function AdminPackages() {
                     type="number"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.price}
-                    onChange={e => setForm({...form, price: e.target.value})}
+                    onChange={e => setForm({ ...form, price: e.target.value })}
                     placeholder={form.price_currency === 'USD' ? '250' : '3000000'}
                   />
                 </div>
@@ -514,7 +618,7 @@ export default function AdminPackages() {
                   <select
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={form.price_currency}
-                    onChange={e => setForm({...form, price_currency: e.target.value})}
+                    onChange={e => setForm({ ...form, price_currency: e.target.value })}
                   >
                     <option value="USD">USD ($)</option>
                     <option value="UZS">UZS (so'm)</option>
@@ -527,7 +631,7 @@ export default function AdminPackages() {
                 <input
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.hotel}
-                  onChange={e => setForm({...form, hotel: e.target.value})}
+                  onChange={e => setForm({ ...form, hotel: e.target.value })}
                   placeholder="Hotel Samarkand"
                 />
               </div>
@@ -541,10 +645,10 @@ export default function AdminPackages() {
                     const file = e.target.files?.[0] || null;
                     if (file) {
                       const reader = new FileReader();
-                      reader.onload = () => setForm({...form, image: reader.result as string});
+                      reader.onload = () => setForm({ ...form, image: reader.result as string });
                       reader.readAsDataURL(file);
                     } else {
-                      setForm({...form, image: ''});
+                      setForm({ ...form, image: '' });
                     }
                   }}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -559,7 +663,7 @@ export default function AdminPackages() {
                 <input
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.included}
-                  onChange={e => setForm({...form, included: e.target.value})}
+                  onChange={e => setForm({ ...form, included: e.target.value })}
                   placeholder="Hotel, Nonushta, Gid"
                 />
               </div>
@@ -569,7 +673,7 @@ export default function AdminPackages() {
                 <input
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={form.interests}
-                  onChange={e => setForm({...form, interests: e.target.value})}
+                  onChange={e => setForm({ ...form, interests: e.target.value })}
                   placeholder="History, Culture, Architecture"
                 />
               </div>
@@ -579,7 +683,7 @@ export default function AdminPackages() {
                   type="checkbox"
                   id="flight"
                   checked={form.flight_included}
-                  onChange={e => setForm({...form, flight_included: e.target.checked})}
+                  onChange={e => setForm({ ...form, flight_included: e.target.checked })}
                   className="w-4 h-4"
                 />
                 <label htmlFor="flight" className="text-sm text-gray-700">Aviachipta kiradi</label>

@@ -68,6 +68,7 @@ const packageSchema = new mongoose.Schema({
   country: String,
   start_date: Date,
   end_date: Date,
+  valid_dates: [Date],
   hotel: String,
   flight_included: { type: Boolean, default: false },
   vibe: String,

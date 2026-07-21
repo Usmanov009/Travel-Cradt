@@ -30,8 +30,9 @@ async function createPackage(req, res) {
   try {
     const {
       type, category, title, description, image, duration,
-      price, rating, included, country, start_date, end_date, hotel, flight_included,
-      vibe, interests, partners, translations, company_id, price_currency
+      price, rating, included, country, start_date, end_date, valid_dates, hotel, flight_included,
+      vibe, interests, partners, translations, company_id, price_currency,
+      country1, country2, destination1, destination2, comboStops
     } = req.body;
 
     const finalImage = image || null;
@@ -54,6 +55,18 @@ async function createPackage(req, res) {
       ? flight_included === 'true'
       : (flight_included || false);
 
+    const parsedValidDates = Array.isArray(valid_dates)
+      ? valid_dates.map((d: string) => new Date(d))
+      : [];
+
+    const parsedComboStops = Array.isArray(comboStops)
+      ? comboStops
+      : [];
+    const finalCountry1 = parsedComboStops[0]?.country || country1 || null;
+    const finalDestination1 = parsedComboStops[0]?.destination || destination1 || null;
+    const finalCountry2 = parsedComboStops[1]?.country || country2 || null;
+    const finalDestination2 = parsedComboStops[1]?.destination || destination2 || null;
+
     const pkg = new Package({
       type: type || 'domestic',
       category,
@@ -65,8 +78,9 @@ async function createPackage(req, res) {
       rating: rating || 0,
       included: parsedIncluded,
       country,
-      start_date: start_date || null,
-      end_date: end_date || null,
+      start_date: start_date || (parsedValidDates[0] || null),
+      end_date: end_date || (parsedValidDates[parsedValidDates.length - 1] || null),
+      valid_dates: parsedValidDates,
       hotel,
       flight_included: parsedFlightIncluded,
       vibe,
@@ -99,8 +113,9 @@ async function updatePackage(req, res) {
 
     const {
       type, category, title, description, image, duration,
-      price, rating, included, country, start_date, end_date, hotel, flight_included,
-      vibe, interests, partners, translations, price_currency
+      price, rating, included, country, start_date, end_date, valid_dates, hotel, flight_included,
+      vibe, interests, partners, translations, price_currency,
+      country1, country2, destination1, destination2, comboStops
     } = req.body;
 
     const finalImage = image || null;
@@ -119,6 +134,18 @@ async function updatePackage(req, res) {
       ? flight_included === 'true'
       : (flight_included || false);
 
+    const parsedValidDates = Array.isArray(valid_dates)
+      ? valid_dates.map((d: string) => new Date(d))
+      : [];
+
+    const parsedComboStops = Array.isArray(comboStops)
+      ? comboStops
+      : [];
+    const finalCountry1 = parsedComboStops[0]?.country || country1 || null;
+    const finalDestination1 = parsedComboStops[0]?.destination || destination1 || null;
+    const finalCountry2 = parsedComboStops[1]?.country || country2 || null;
+    const finalDestination2 = parsedComboStops[1]?.destination || destination2 || null;
+
     const updated = await Package.findOneAndUpdate(
       { id: parseInt(id) },
       {
@@ -132,8 +159,9 @@ async function updatePackage(req, res) {
         rating: rating || 0,
         included: parsedIncluded,
         country,
-        start_date: start_date || null,
-        end_date: end_date || null,
+        start_date: start_date || (parsedValidDates[0] || null),
+        end_date: end_date || (parsedValidDates[parsedValidDates.length - 1] || null),
+        valid_dates: parsedValidDates,
         hotel,
         flight_included: parsedFlightIncluded,
         vibe,

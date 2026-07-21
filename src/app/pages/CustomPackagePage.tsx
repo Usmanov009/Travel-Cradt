@@ -1653,7 +1653,11 @@ export function CustomPackagePage() {
     }
     if (currentStep === 4) {
       if (!formData.budget) {
-        setBudgetError("Byudjetni kiriting");
+        setBudgetError("Byudjet turini tanlang");
+        return;
+      }
+      if (!['budget', 'mid-range', 'luxury'].includes(formData.budget)) {
+        setBudgetError("Byudjet turini tanlang");
         return;
       }
       setBudgetError("");
@@ -2227,18 +2231,19 @@ export function CustomPackagePage() {
               <label className="block text-sm font-semibold mb-2">
                 {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                min={50}
-                max={50000}
-                placeholder="Masalan: 1000"
-                value={formData.budget ? formData.budget.replace(/[^0-9]/g, '') : ''}
+              <select
+                value={formData.budget}
                 onChange={(e) => {
                   setBudgetError("");
-                  setFormData({ ...formData, budget: e.target.value ? `$${e.target.value}` : "" });
+                  setFormData({ ...formData, budget: e.target.value });
                 }}
                 className={`w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${budgetError ? 'border-red-400' : 'border-sky-200'}`}
-              />
+              >
+                <option value="">Byudjet turini tanlang...</option>
+                <option value="budget">Byudjet ($100–500 / ~1–5M so'm)</option>
+                <option value="mid-range">O'rta daraja ($500–1500 / ~5–15M so'm)</option>
+                <option value="luxury">Hashamatli ($1500+ / ~15M+ so'm)</option>
+              </select>
               {budgetError && (
                 <p className="text-sm text-red-500 mt-1">{budgetError}</p>
               )}
@@ -2287,9 +2292,9 @@ export function CustomPackagePage() {
           : null;
 
         const budgetLabels: Record<string, string> = {
-          budget: 'Arzon ($100–500)',
-          'mid-range': "O'rta ($500–1500)",
-          luxury: 'Hashamatli ($1500+)',
+          budget: 'Byudjet ($100–500 / ~1–5M so\'m)',
+          'mid-range': "O'rta ($500–1500 / ~5–15M so'm)",
+          luxury: 'Hashamatli ($1500+ / ~15M+ so\'m)',
         };
 
         return (
@@ -2574,7 +2579,12 @@ export function CustomPackagePage() {
                   </div>
                   <div>
                     <span className="text-slate-500">{t("customPackage.labels.budget")}:</span>
-                    <span className="ml-2 font-semibold">{formData.budget}</span>
+                    <span className="ml-2 font-semibold">
+                      {formData.budget === 'budget' ? 'Byudjet ($100–500 / ~1–5M so\'m)' :
+                       formData.budget === 'mid-range' ? "O'rta ($500–1500 / ~5–15M so'm)" :
+                       formData.budget === 'luxury' ? 'Hashamatli ($1500+ / ~15M+ so\'m)' :
+                       formData.budget}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-500">{t("customPackage.labels.hotel")}:</span>
