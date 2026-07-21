@@ -2225,42 +2225,51 @@ export function CustomPackagePage() {
         );
 
       case 4: {
+        const budgetTypes = [
+          { value: 'budget', label: 'Byudjet' },
+          { value: 'mid-range', label: "O'rta daraja" },
+          { value: 'luxury', label: 'Hashamatli' },
+        ];
         return (
           <div className="space-y-6">
             <h2 className="text-xl sm:text-3xl font-bold mb-4 sm:mb-6">{t("customPackage.step4")}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.budget}
-                  onChange={(e) => {
-                    setBudgetError("");
-                    setFormData({ ...formData, budget: e.target.value });
-                  }}
-                  className={`w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${budgetError ? 'border-red-400' : 'border-sky-200'}`}
-                >
-                  <option value="">Byudjet turini tanlang...</option>
-                  <option value="budget">Byudjet</option>
-                  <option value="mid-range">O'rta daraja</option>
-                  <option value="luxury">Hashamatli</option>
-                </select>
-                {budgetError && (
-                  <p className="text-sm text-red-500 mt-1">{budgetError}</p>
-                )}
+            <div>
+              <label className="block text-sm font-semibold mb-2">
+                {t("customPackage.labels.budget")} <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                {budgetTypes.map((bt) => (
+                  <button
+                    key={bt.value}
+                    type="button"
+                    onClick={() => {
+                      setBudgetError("");
+                      setFormData({ ...formData, budget: bt.value });
+                    }}
+                    className={`w-full py-3 rounded-xl border-2 text-sm font-semibold transition ${
+                      formData.budget === bt.value
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300'
+                    }`}
+                  >
+                    {bt.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2">Valyuta</label>
-                <select
-                  value={formData.price_currency || 'USD'}
-                  onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
-                  className="w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-sky-200"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="UZS">UZS (so'm)</option>
-                </select>
-              </div>
+              {budgetError && (
+                <p className="text-sm text-red-500 mt-1">{budgetError}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Valyuta</label>
+              <select
+                value={formData.price_currency || 'USD'}
+                onChange={(e) => setFormData({ ...formData, price_currency: e.target.value })}
+                className="w-full px-4 py-3 border rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-sky-200"
+              >
+                <option value="USD">USD ($)</option>
+                <option value="UZS">UZS (so'm)</option>
+              </select>
             </div>
           </div>
         );
