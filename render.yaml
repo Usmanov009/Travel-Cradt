@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: travelcraft-ai
+    runtime: node
+    buildCommand: npm install --include=dev && npm run build && npm install --prefix server
+    startCommand: npm --prefix server start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: WEB_APP_URL
+        sync: false
