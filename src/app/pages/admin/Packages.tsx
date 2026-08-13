@@ -1,4 +1,4 @@
-﻿import React, { useContext, useEffect, useState } from 'react';
+﻿import React, { useContext, useEffect, useState, useRef } from 'react';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 import { adminFetch } from '../../services/adminApi';
 
@@ -50,6 +50,18 @@ const emptyForm = {
   comboStops: [{ country: '', destination: '' }, { country: '', destination: '' }] as { country: string; destination: string }[],
 };
 
+interface ImportResult {
+  row: number;
+  title: string;
+  type: string;
+  company_id: number;
+}
+
+interface ImportError {
+  row: number;
+  error: string;
+}
+
 export default function AdminPackages() {
   const { token, isSuperAdmin } = useContext(AdminAuthContext);
   const [packages, setPackages] = useState<any[]>([]);
@@ -63,6 +75,13 @@ export default function AdminPackages() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [assigningId, setAssigningId] = useState<number | null>(null);
   const [tempDate, setTempDate] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResults, setImportResults] = useState<{ imported: number; results: ImportResult[]; errors: ImportError[] } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (form.type === 'domestic' && form.destination && !form.country) {
@@ -268,6 +287,58 @@ export default function AdminPackages() {
     }
   };
 
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) {
+      setImportError('Fayl tanlang');
+      return;
+    }
+    setImportError(null);
+    setImportResults(null);
+    setImporting(true);
+
+    try {
+      const fd = new FormData();
+      fd.append('file', importFile);
+
+      const res = await adminFetch('/packages/import', token!, {
+        method: 'POST',
+        body: fd,
+      });
+
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || 'Import qilishda xatolik');
+      }
+
+      const data = await res.json();
+      setImportResults(data);
+      setImportFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      load();
+    } catch (err: any) {
+      setImportError(err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      setImportFile(files[0]);
+      setImportError(null);
+      setImportResults(null);
+    }
+  };
+
   const filtered = packages.filter(p =>
     p.title?.toLowerCase().includes(search.toLowerCase()) ||
     p.country?.toLowerCase().includes(search.toLowerCase())
@@ -280,12 +351,20 @@ export default function AdminPackages() {
           <h1 className="text-2xl font-bold text-gray-800">Turlar Boshqaruvi</h1>
           <p className="text-gray-500 text-sm mt-1">{packages.length} ta tur mavjud</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm"
-        >
-          + Yangi Tur Qo'shish
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowCreate(!showCreate); setShowImport(false); setEditPkg(null); }}
+            className={`px-4 py-2 rounded-lg font-medium ${showCreate ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+          >
+            {showCreate ? 'Bekor qilish' : '+ Qo\'lda qo\'shish'}
+          </button>
+          <button
+            onClick={() => { setShowImport(!showImport); setShowCreate(false); setEditPkg(null); setImportError(null); setImportResults(null); }}
+            className={`px-4 py-2 rounded-lg font-medium ${showImport ? 'bg-gray-200 text-gray-700' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+          >
+            {showImport ? 'Bekor qilish' : '+ File orqali qo\'shish'}
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -394,313 +473,447 @@ export default function AdminPackages() {
         </div>
       )}
 
-      {/* Form modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{editPkg ? 'Turni Tahrirlash' : 'Yangi Tur Qo\'shish'}</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+      {showCreate && (
+        <div className="bg-white rounded-xl shadow p-6 mb-6 border border-blue-100">
+          <h2 className="text-lg font-semibold mb-4 text-gray-700">{editPkg ? 'Turni Tahrirlash' : 'Yangi Tur Qo\'shish'}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tur Turi *</label>
+              <select
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.type}
+                onChange={e => setForm({ ...form, type: e.target.value })}
+              >
+                <option value="domestic">Ichki (Domestic)</option>
+                <option value="international">Xalqaro (International)</option>
+                <option value="combo">Combo</option>
+              </select>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tur Turi *</label>
-                  <select
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Kategoriya</label>
+              <select
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.category}
+                onChange={e => setForm({ ...form, category: e.target.value })}
+              >
+                <option value="">Tanlang...</option>
+                <option value="historical">Tarixiy</option>
+                <option value="nature">Tabiat</option>
+                <option value="beach">Plyaj</option>
+                <option value="adventure">Sarguzasht</option>
+                <option value="culture">Madaniyat</option>
+                <option value="business">Biznes</option>
+                <option value="family">Oilaviy</option>
+                <option value="luxury">Hashamatli</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tur Nomi *</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.title}
+                onChange={e => setForm({ ...form, title: e.target.value })}
+                placeholder="Samarkand Heritage Tour"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tavsif</label>
+              <textarea
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                value={form.description}
+                onChange={e => setForm({ ...form, description: e.target.value })}
+                placeholder="Tur haqida qisqa ma'lumot..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Davomiyligi</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.duration}
+                onChange={e => setForm({ ...form, duration: e.target.value })}
+                placeholder="3 kun"
+              />
+            </div>
+
+            {(form.type === 'domestic' || form.type === 'international') && (
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amal qilish sanalari *</label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="date"
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.type}
-                    onChange={e => setForm({ ...form, type: e.target.value })}
+                    value={tempDate}
+                    onChange={e => setTempDate(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={addValidDate}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap"
                   >
-                    <option value="domestic">Ichki (Domestic)</option>
-                    <option value="international">Xalqaro (International)</option>
-                    <option value="combo">Combo</option>
-                  </select>
+                    Qo'shish
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kategoriya</label>
-                  <select
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.category}
-                    onChange={e => setForm({ ...form, category: e.target.value })}
-                  >
-                    <option value="">Tanlang...</option>
-                    <option value="historical">Tarixiy</option>
-                    <option value="nature">Tabiat</option>
-                    <option value="beach">Plyaj</option>
-                    <option value="adventure">Sarguzasht</option>
-                    <option value="culture">Madaniyat</option>
-                    <option value="business">Biznes</option>
-                    <option value="family">Oilaviy</option>
-                    <option value="luxury">Hashamatli</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tur Nomi *</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.title}
-                  onChange={e => setForm({ ...form, title: e.target.value })}
-                  placeholder="Samarkand Heritage Tour"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tavsif</label>
-                <textarea
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="Tur haqida qisqa ma'lumot..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Davomiyligi</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.duration}
-                  onChange={e => setForm({ ...form, duration: e.target.value })}
-                  placeholder="3 kun"
-                />
-              </div>
-
-              {(form.type === 'domestic' || form.type === 'international') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amal qilish sanalari *</label>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      type="date"
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={tempDate}
-                      onChange={e => setTempDate(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={addValidDate}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap"
-                    >
-                      Qo'shish
-                    </button>
-                  </div>
-                  {form.valid_dates.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {form.valid_dates.map((date) => (
-                        <span
-                          key={date}
-                          className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                {form.valid_dates.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {form.valid_dates.map((date) => (
+                      <span
+                        key={date}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                      >
+                        {date}
+                        <button
+                          type="button"
+                          onClick={() => removeValidDate(date)}
+                          className="text-blue-400 hover:text-blue-600 font-bold"
                         >
-                          {date}
-                          <button
-                            type="button"
-                            onClick={() => removeValidDate(date)}
-                            className="text-blue-400 hover:text-blue-600 font-bold"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {form.valid_dates.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-1">Tur ishlaydigan sanalarni tanlang.</p>
-                  )}
-                </div>
-              )}
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {form.valid_dates.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">Tur ishlaydigan sanalarni tanlang.</p>
+                )}
+              </div>
+            )}
 
-              {form.type === 'domestic' && (
+            {form.type === 'domestic' && (
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
+                <input
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={form.destination}
+                  onChange={e => setForm({ ...form, destination: e.target.value })}
+                  placeholder="Samarqand"
+                />
+              </div>
+            )}
+
+            {form.type === 'international' && (
+              <div className="sm:col-span-2 grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat *</label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={form.country}
+                    onChange={e => setForm({ ...form, country: e.target.value })}
+                  >
+                    <option value="">Mamlakat tanlang...</option>
+                    {countryOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
                   <input
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!form.country}
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     value={form.destination}
                     onChange={e => setForm({ ...form, destination: e.target.value })}
-                    placeholder="Samarqand"
+                    placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
                   />
+                  {!form.country && (
+                    <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
+                  )}
                 </div>
-              )}
+              </div>
+            )}
 
-              {form.type === 'international' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat *</label>
-                    <select
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      value={form.country}
-                      onChange={e => setForm({ ...form, country: e.target.value })}
-                    >
-                      <option value="">Mamlakat tanlang...</option>
-                      {countryOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
-                    <input
-                      disabled={!form.country}
-                      className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      value={form.destination}
-                      onChange={e => setForm({ ...form, destination: e.target.value })}
-                      placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
-                    />
-                    {!form.country && (
-                      <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {form.type === 'combo' && (
-                <>
-                  {form.comboStops.map((stop, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat {index + 1} *</label>
-                        <select
+            {form.type === 'combo' && (
+              <div className="sm:col-span-2 space-y-3">
+                {form.comboStops.map((stop, index) => (
+                  <div key={index} className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat {index + 1} *</label>
+                      <select
+                        className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={stop.country}
+                        onChange={e => updateComboStop(index, 'country', e.target.value)}
+                      >
+                        <option value="">Mamlakat tanlang...</option>
+                        {countryOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Manzil {index + 1} *</label>
+                      <div className="flex gap-2">
+                        <input
                           className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          value={stop.country}
-                          onChange={e => updateComboStop(index, 'country', e.target.value)}
-                        >
-                          <option value="">Mamlakat tanlang...</option>
-                          {countryOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Manzil {index + 1} *</label>
-                        <div className="flex gap-2">
-                          <input
-                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={stop.destination}
-                            onChange={e => updateComboStop(index, 'destination', e.target.value)}
-                            placeholder="Samarqand"
-                          />
-                          {form.comboStops.length > 2 && (
-                            <button
-                              type="button"
-                              onClick={() => removeComboStop(index)}
-                              className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
+                          value={stop.destination}
+                          onChange={e => updateComboStop(index, 'destination', e.target.value)}
+                          placeholder="Samarqand"
+                        />
+                        {form.comboStops.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => removeComboStop(index)}
+                            className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100"
+                          >
+                            ×
+                          </button>
+                        )}
                       </div>
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addComboStop}
-                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600"
-                  >
-                    + Qo'shimcha manzil qo'shish
-                  </button>
-                </>
-              )}
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Narx *</label>
-                  <input
-                    type="number"
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.price}
-                    onChange={e => setForm({ ...form, price: e.target.value })}
-                    placeholder={form.price_currency === 'USD' ? '250' : '3000000'}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Valyuta</label>
-                  <select
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={form.price_currency}
-                    onChange={e => setForm({ ...form, price_currency: e.target.value })}
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="UZS">UZS (so'm)</option>
-                  </select>
-                </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addComboStop}
+                  className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600"
+                >
+                  + Qo'shimcha manzil qo'shish
+                </button>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mehmonxona</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.hotel}
-                  onChange={e => setForm({ ...form, hotel: e.target.value })}
-                  placeholder="Hotel Samarkand"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rasm yuklash (PNG / JPG / SVG)</label>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/svg+xml"
-                  onChange={e => {
-                    const file = e.target.files?.[0] || null;
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = () => setForm({ ...form, image: reader.result as string });
-                      reader.readAsDataURL(file);
-                    } else {
-                      setForm({ ...form, image: '' });
-                    }
-                  }}
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {form.image && (
-                  <img src={form.image} alt="preview" className="w-full h-32 object-cover rounded mt-2" />
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nimalar kiradi (vergul bilan)</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.included}
-                  onChange={e => setForm({ ...form, included: e.target.value })}
-                  placeholder="Hotel, Nonushta, Gid"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Qiziqishlar (vergul bilan)</label>
-                <input
-                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={form.interests}
-                  onChange={e => setForm({ ...form, interests: e.target.value })}
-                  placeholder="History, Culture, Architecture"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="flight"
-                  checked={form.flight_included}
-                  onChange={e => setForm({ ...form, flight_included: e.target.checked })}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="flight" className="text-sm text-gray-700">Aviachipta kiradi</label>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Narx *</label>
+              <input
+                type="number"
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.price}
+                onChange={e => setForm({ ...form, price: e.target.value })}
+                placeholder={form.price_currency === 'USD' ? '250' : '3000000'}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Valyuta</label>
+              <select
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.price_currency}
+                onChange={e => setForm({ ...form, price_currency: e.target.value })}
+              >
+                <option value="USD">USD ($)</option>
+                <option value="UZS">UZS (so'm)</option>
+              </select>
             </div>
 
-            <div className="sticky bottom-0 bg-white px-6 py-4 border-t flex gap-3">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Bekor qilish</button>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mehmonxona</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.hotel}
+                onChange={e => setForm({ ...form, hotel: e.target.value })}
+                placeholder="Hotel Samarkand"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rasm yuklash (PNG / JPG / SVG)</label>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml"
+                onChange={e => {
+                  const file = e.target.files?.[0] || null;
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => setForm({ ...form, image: reader.result as string });
+                    reader.readAsDataURL(file);
+                  } else {
+                    setForm({ ...form, image: '' });
+                  }
+                }}
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {form.image && (
+                <img src={form.image} alt="preview" className="w-full h-32 object-cover rounded mt-2" />
+              )}
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nimalar kiradi (vergul bilan)</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.included}
+                onChange={e => setForm({ ...form, included: e.target.value })}
+                placeholder="Hotel, Nonushta, Gid"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Qiziqishlar (vergul bilan)</label>
+              <input
+                className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={form.interests}
+                onChange={e => setForm({ ...form, interests: e.target.value })}
+                placeholder="History, Culture, Architecture"
+              />
+            </div>
+
+            <div className="sm:col-span-2 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="flight"
+                checked={form.flight_included}
+                onChange={e => setForm({ ...form, flight_included: e.target.checked })}
+                className="w-4 h-4"
+              />
+              <label htmlFor="flight" className="text-sm text-gray-700">Aviachipta kiradi</label>
+            </div>
+
+            <div className="sm:col-span-2 flex gap-2">
               <button
                 onClick={save}
                 disabled={saving || !form.title}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium"
               >
                 {saving ? 'Saqlanmoqda...' : editPkg ? 'Saqlash' : 'Qo\'shish'}
               </button>
+              <button
+                type="button"
+                onClick={() => { setShowCreate(false); setEditPkg(null); setForm(emptyForm); }}
+                className="px-6 py-2.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 font-medium"
+              >
+                Bekor
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {showImport && (
+        <div className="bg-white rounded-xl shadow p-6 mb-6 border border-purple-100">
+          <h2 className="text-lg font-semibold mb-1 text-gray-700">Fayl orqali tur qo'shish</h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Excel (.xlsx, .xls) yoki Word (.docx) fayl yuklang. Fayl birinchi qatorni sarlavha sifatida qabul qiladi.
+          </p>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4 text-xs text-purple-800">
+            <p className="font-semibold mb-1">Fayl tuzilishi:</p>
+            <p>Fayl quyidagi ustunlarni ichragi mumkin (tartib muhim emas):</p>
+            <ul className="list-disc list-inside mt-1 space-y-0.5">
+              <li><strong>Tur nomi</strong> — tur nomi, title, nom</li>
+              <li><strong>Tur turi</strong> — tur turi, type (domestic/international/combo)</li>
+              <li><strong>Kategoriya</strong> — kategoriya, category</li>
+              <li><strong>Tavsif</strong> — tavsif, description</li>
+              <li><strong>Davomiyligi</strong> — davomiyligi, duration</li>
+              <li><strong>Narx</strong> — narx, price</li>
+              <li><strong>Valyuta</strong> — valyuta, currency (USD/UZS)</li>
+              <li><strong>Mamlakat</strong> — mamlakat, country</li>
+              <li><strong>Mehmonxona</strong> — mehmonxona, hotel</li>
+              <li><strong>Aviachipta</strong> — aviachipta, flight (ha/yo'q)</li>
+              <li><strong>Nimalar kiradi</strong> — nimalar kiradi, included (vergul bilan)</li>
+              <li><strong>Qiziqishlar</strong> — qiziqishlar, interests (vergul bilan)</li>
+            </ul>
+          </div>
+
+          {importError && (
+            <div className="text-red-600 mb-4 p-3 bg-red-50 rounded-lg text-sm">{importError}</div>
+          )}
+
+          <form onSubmit={handleImport} className="space-y-4">
+            <div
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-500 transition-colors"
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.docx,.doc"
+                className="hidden"
+                onChange={e => {
+                  const file = e.target.files?.[0] || null;
+                  setImportFile(file);
+                  setImportError(null);
+                  setImportResults(null);
+                }}
+              />
+              {importFile ? (
+                <div className="text-purple-700">
+                  <div className="text-2xl mb-2">📄</div>
+                  <div className="font-medium">{importFile.name}</div>
+                  <div className="text-xs text-gray-500 mt-1">{(importFile.size / 1024).toFixed(1)} KB</div>
+                </div>
+              ) : (
+                <div className="text-gray-500">
+                  <div className="text-3xl mb-2">📂</div>
+                  <div className="font-medium">Faylni shu yerga torting yoki tanlash uchun bosing</div>
+                  <div className="text-xs mt-1">.xlsx, .xls, .docx (maks. 10 MB)</div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={importing || !importFile}
+              className="px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 font-medium"
+            >
+              {importing ? 'Import qilinmoqda...' : 'Import qilish'}
+            </button>
+          </form>
+
+          {importResults && (
+            <div className="mt-6 space-y-4">
+              <div className={`p-4 rounded-lg ${importResults.imported > 0 ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
+                <h3 className="font-semibold text-gray-800 mb-1">Natija</h3>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium text-green-700">{importResults.imported} ta</span> tur muvaffaqiyatli qo'shildi
+                  {importResults.errors.length > 0 && (
+                    <span className="text-red-600">, <span className="font-medium">{importResults.errors.length} ta</span> xatolik</span>
+                  )}
+                </p>
+              </div>
+
+              {importResults.results.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-green-700 mb-2">Muvaffaqiyatli qo'shilganlar:</h4>
+                  <div className="max-h-60 overflow-y-auto border rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left p-2 font-medium text-gray-600">#</th>
+                          <th className="text-left p-2 font-medium text-gray-600">Tur nomi</th>
+                          <th className="text-left p-2 font-medium text-gray-600">Turi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {importResults.results.map((r, i) => (
+                          <tr key={i} className="hover:bg-gray-50">
+                            <td className="p-2 text-gray-500">{r.row}</td>
+                            <td className="p-2 text-gray-800">{r.title}</td>
+                            <td className="p-2 text-gray-600">{r.type}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {importResults.errors.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-red-700 mb-2">Xatoliklar:</h4>
+                  <div className="max-h-60 overflow-y-auto border border-red-200 rounded-lg">
+                    <table className="w-full text-sm">
+                      <thead className="bg-red-50">
+                        <tr>
+                          <th className="text-left p-2 font-medium text-red-600">Qator</th>
+                          <th className="text-left p-2 font-medium text-red-600">Xatolik</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-red-100">
+                        {importResults.errors.map((err, i) => (
+                          <tr key={i} className="hover:bg-red-50">
+                            <td className="p-2 text-gray-500">{err.row}</td>
+                            <td className="p-2 text-red-700">{err.error}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
