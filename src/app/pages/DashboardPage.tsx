@@ -151,14 +151,15 @@ export function DashboardPage() {
   const previewPrice = (booking: StoredBooking) =>
     recalculateBookingPrice({ ...booking, guests: editGuests });
 
-  const handleSaveEdit = (booking: StoredBooking) => {
+  const handleSaveEdit = async (booking: StoredBooking) => {
+    const newGuests = Math.max(1, editGuests);
     const updated = bookings.map((item) => {
       if (item.id !== booking.id || item.type !== booking.type) return item;
       const next = {
         ...item,
         name: editName,
         travelDate: editTravelDate || undefined,
-        guests: Math.max(1, editGuests),
+        guests: newGuests,
         basePrice: resolveBasePrice(item),
       };
       return { ...next, price: recalculateBookingPrice(next) };
@@ -166,6 +167,28 @@ export function DashboardPage() {
     setBookings(updated);
     localStorage.setItem("travelcraft_bookings", JSON.stringify(updated));
     setEditingKey(null);
+
+    // Sync changes to the database so the admin panel can see them
+    if (booking.dbId) {
+      try {
+        const res = await fetch(`/api/bookings/${booking.dbId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: editName,
+            guests: newGuests,
+            travel_date: editTravelDate || null,
+            price: recalculateBookingPrice({ ...booking, guests: newGuests }),
+            price_currency: booking.priceCurrency || "USD",
+          }),
+        });
+        if (!res.ok) {
+          console.error("[handleSaveEdit] failed to sync booking to database:", await res.text());
+        }
+      } catch (err) {
+        console.error("[handleSaveEdit] error syncing booking:", err);
+      }
+    }
   };
 
   const stats = [

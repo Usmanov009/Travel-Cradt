@@ -95,7 +95,7 @@ async function createBooking(req, res) {
 async function updateBooking(req, res) {
   try {
     const id = req.params.id;
-    const { status, name, phone, guests, days } = req.body;
+    const { status, name, phone, guests, days, travel_date, price, price_currency } = req.body;
     
     // Get the current booking to compare changes
     const currentBooking = await Booking.findOne({ id: Number(id) });
@@ -104,24 +104,49 @@ async function updateBooking(req, res) {
     const updateFields = {};
     const changes = [];
     
+    // Normalize incoming values for comparison
+    let newTravelDate = null;
+    if (travel_date !== undefined) {
+      newTravelDate = travel_date ? new Date(travel_date) : null;
+    }
+    const newPrice = price !== undefined ? parseFloat(price) : undefined;
+    
     // Check each field for changes
     const fieldsToCheck = [
       { field: 'status', value: status },
       { field: 'name', value: name },
       { field: 'phone', value: phone },
-      { field: 'guests', value: guests },
-      { field: 'days', value: days },
+      { field: 'guests', value: guests !== undefined ? Number(guests) : undefined },
+      { field: 'days', value: days !== undefined ? Number(days) : undefined },
+      { field: 'travel_date', value: travel_date !== undefined ? newTravelDate : undefined },
+      { field: 'price', value: newPrice },
+      { field: 'price_currency', value: price_currency },
     ];
     
     fieldsToCheck.forEach(({ field, value }) => {
-      if (value !== undefined && currentBooking[field] !== value) {
+      if (value === undefined) return;
+      
+      const current = currentBooking[field];
+      let hasChanged = false;
+      
+      if (value instanceof Date) {
+        // Compare dates by timestamp (ignore null vs null)
+        const currentTime = current ? new Date(current).getTime() : null;
+        hasChanged = currentTime !== value.getTime();
+      } else if (typeof value === 'number') {
+        hasChanged = Number(current) !== value;
+      } else {
+        hasChanged = String(current ?? '') !== String(value);
+      }
+      
+      if (hasChanged) {
         updateFields[field] = value;
         changes.push({
           field,
-          old_value: currentBooking[field],
+          old_value: current,
           new_value: value,
           changed_at: new Date(),
-          changed_by: req.user?.role === 'admin' ? 'admin' : 'client'
+          changed_by: req.user?.role === 'admin' || req.user?.role === 'super_admin' ? 'admin' : 'client'
         });
       }
     });
