@@ -100,6 +100,11 @@ async function updateBooking(req, res) {
     // Get the current booking to compare changes
     const currentBooking = await Booking.findOne({ id: Number(id) });
     if (!currentBooking) return res.status(404).json({ error: 'Booking not found' });
+
+    // Clients cannot edit an accepted booking
+    if (currentBooking.status === 'accepted') {
+      return res.status(403).json({ error: "Qabul qilingan bronni o'zgartirib bo'lmaydi" });
+    }
     
     const updateFields = {};
     const changes = [];

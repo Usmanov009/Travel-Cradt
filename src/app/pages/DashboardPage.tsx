@@ -417,27 +417,34 @@ export function DashboardPage() {
 
                       {/* Actions */}
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => isEditing ? handleSaveEdit(booking) : handleStartEdit(booking)}
-                          className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition ${
-                            isEditing
-                              ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                              : "border border-slate-200 text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          {isEditing
-                            ? <><Check className="w-3.5 h-3.5" /> Saqlash</>
-                            : <><Pencil className="w-3.5 h-3.5" /> Tahrirlash</>
-                          }
-                        </button>
-                        {booking.status !== "accepted" && (
-                          <button
-                            onClick={() => handleClearBooking(booking.id, booking.type)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-100 px-3 py-2 text-xs sm:text-sm text-red-500 hover:bg-red-50 transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">O'chirish</span>
-                          </button>
+                        {booking.status === "accepted" ? (
+                          <div className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-green-50 border border-green-100 px-3 py-2 text-xs sm:text-sm font-medium text-green-700">
+                            <Check className="w-3.5 h-3.5" />
+                            Tasdiqlangan — tahrirlash mumkin emas
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => isEditing ? handleSaveEdit(booking) : handleStartEdit(booking)}
+                              className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium transition ${
+                                isEditing
+                                  ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                                  : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                              }`}
+                            >
+                              {isEditing
+                                ? <><Check className="w-3.5 h-3.5" /> Saqlash</>
+                                : <><Pencil className="w-3.5 h-3.5" /> Tahrirlash</>
+                              }
+                            </button>
+                            <button
+                              onClick={() => handleClearBooking(booking.id, booking.type)}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-100 px-3 py-2 text-xs sm:text-sm text-red-500 hover:bg-red-50 transition"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">O'chirish</span>
+                            </button>
+                          </>
                         )}
                       </div>
 
