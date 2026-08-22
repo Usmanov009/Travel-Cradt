@@ -50,10 +50,12 @@ const tourCompanySchema = new mongoose.Schema({
   achievements: [String],
   countries: [String],
   revenue_reset_at: { type: Date, default: null },
+  commission_zeroed_at: { type: Date, default: null },
   revenue_history: [{
     reset_at: Date,
     total_revenue: Number,
     total_bookings: Number,
+    commission_amount: Number,
   }],
   created_at: { type: Date, default: Date.now },
 });

@@ -16,14 +16,16 @@ type CompanyReport = {
   rejected_bookings: number;
   total_revenue: number;
   pending_revenue: number;
+  commission_3pct: number;
   last_booking_at: string | null;
-  revenue_reset_at: string | null;
+  commission_zeroed_at: string | null;
   reset_count: number;
 };
 
 type Totals = {
   total_revenue: number;
   pending_revenue: number;
+  total_commission: number;
   total_bookings: number;
   accepted_bookings: number;
   pending_bookings: number;
@@ -78,9 +80,9 @@ export default function AdminReports() {
 
   const resetCompany = async (company: CompanyReport) => {
     const confirmed = window.confirm(
-      `"${company.name}" firmasining daromati nollanadi.
+      `"${company.name}" firmasining 3% komissiya summasi nollanadi.
 
-Joriy daromad: $${parseFloat(String(company.total_revenue)).toLocaleString()}
+Nollanadigan summa: $${parseFloat(String(company.commission_3pct)).toLocaleString()}
 
 Davom etasizmi?`
     );
@@ -92,7 +94,7 @@ Davom etasizmi?`
       const res = await adminFetch(`/reports/${company.id}/reset`, token, { method: 'POST' });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Xatolik yuz berdi');
-      setMessage(json.message || 'Daromad nollandi');
+      setMessage(json.message || 'Komissiya summasi nollandi');
       loadReports();
     } catch (e: any) {
       setMessage('Xatolik: ' + e.message);
@@ -103,7 +105,9 @@ Davom etasizmi?`
 
   const resetAll = async () => {
     const confirmed = window.confirm(
-      `BARCHA tur firmalarning daromatlari nollanadi!
+      `BARCHA tur firmalarning 3% komissiya summari nollanadi!
+
+Jami nollanadigan: $${parseFloat(String(totals?.total_commission || 0)).toLocaleString()}
 
 Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
     );
@@ -115,7 +119,7 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
       const res = await adminFetch('/reports/reset-all', token, { method: 'POST' });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Xatolik yuz berdi');
-      setMessage(json.message || 'Barcha daromadlar nollandi');
+      setMessage(json.message || 'Barcha komissiya summari nollandi');
       loadReports();
     } catch (e: any) {
       setMessage('Xatolik: ' + e.message);
@@ -160,11 +164,17 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
           <div className="text-xs text-gray-500">Jami Daromad</div>
           <div className="text-2xl font-bold mt-1 text-green-600">
             ${parseFloat(String(totals?.total_revenue || 0)).toLocaleString()}
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-purple-500">
+          <div className="text-xs text-gray-500">Komissiya (3%)</div>
+          <div className="text-2xl font-bold mt-1 text-purple-600">
+            ${parseFloat(String(totals?.total_commission || 0)).toLocaleString()}
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500">
@@ -227,6 +237,7 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
                 <th className="px-4 py-3 font-semibold text-center">Turlar</th>
                 <th className="px-4 py-3 font-semibold text-center">Bronlar</th>
                 <th className="px-4 py-3 font-semibold text-right">Daromad</th>
+                <th className="px-4 py-3 font-semibold text-right">Komissiya (3%)</th>
                 <th className="px-4 py-3 font-semibold text-right">Kutilayotgan</th>
                 <th className="px-4 py-3 font-semibold">Oxirgi bron</th>
                 <th className="px-4 py-3 font-semibold text-center">Amallar</th>
@@ -235,7 +246,7 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                     Firmalar topilmadi
                   </td>
                 </tr>
@@ -268,8 +279,13 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
                       <div className="font-bold text-green-600">
                         ${parseFloat(String(c.total_revenue)).toLocaleString()}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-bold text-purple-600">
+                        ${parseFloat(String(c.commission_3pct)).toLocaleString()}
+                      </div>
                       {c.reset_count > 0 && (
-                        <div className="text-xs text-gray-400" title={`Oxirgi nollash: ${c.revenue_reset_at ? new Date(c.revenue_reset_at).toLocaleString() : '-'}`}>
+                        <div className="text-xs text-gray-400" title={`Oxirgi nollash: ${c.commission_zeroed_at ? new Date(c.commission_zeroed_at).toLocaleString() : '-'}`}>
                           {c.reset_count} marta nollangan
                         </div>
                       )}
@@ -308,6 +324,11 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
                       .reduce((s, c) => s + parseFloat(String(c.total_revenue)), 0)
                       .toLocaleString()}
                   </td>
+                  <td className="px-4 py-3 text-right text-purple-600">
+                    ${filtered
+                      .reduce((s, c) => s + parseFloat(String(c.commission_3pct)), 0)
+                      .toLocaleString()}
+                  </td>
                   <td className="px-4 py-3 text-right text-yellow-600">
                     ${filtered
                       .reduce((s, c) => s + parseFloat(String(c.pending_revenue)), 0)
@@ -322,8 +343,9 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
       </div>
 
       <p className="mt-4 text-xs text-gray-400">
-        * "Nollash" tugmasi firmaning hisobotdagi daromatini 0 ga qaytaradi. Nollashdan oldingi
-        ko'rsatkichlar tarixda saqlanib qoladi va keyingi bronlar yangi hisobdan boshlanadi.
+        * Har bir firmaning daromatidan 3% komissiya sifatida alohida hisoblanadi. "Nollash"
+        tugmasi aynan shu 3% komissiya summasini 0 ga qaytaradi (nollashdan oldingi summa tarixda
+        saqlanib qoladi). Firmalarning umumiy daromadi o'zgarishsiz qoladi.
       </p>
     </div>
   );
