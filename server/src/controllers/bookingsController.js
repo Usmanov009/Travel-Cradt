@@ -96,17 +96,59 @@ async function updateBooking(req, res) {
   try {
     const id = req.params.id;
     const { status, name, phone, guests, days } = req.body;
+    
+    // Get the current booking to compare changes
+    const currentBooking = await Booking.findOne({ id: Number(id) });
+    if (!currentBooking) return res.status(404).json({ error: 'Booking not found' });
+    
     const updateFields = {};
-    if (status !== undefined) updateFields.status = status;
-    if (name !== undefined) updateFields.name = name;
-    if (phone !== undefined) updateFields.phone = phone;
-    if (guests !== undefined) updateFields.guests = guests;
-    if (days !== undefined) updateFields.days = days;
-
-    const updated = await Booking.findOneAndUpdate({ id: Number(id) }, updateFields, { new: true });
+    const changes = [];
+    
+    // Check each field for changes
+    const fieldsToCheck = [
+      { field: 'status', value: status },
+      { field: 'name', value: name },
+      { field: 'phone', value: phone },
+      { field: 'guests', value: guests },
+      { field: 'days', value: days },
+    ];
+    
+    fieldsToCheck.forEach(({ field, value }) => {
+      if (value !== undefined && currentBooking[field] !== value) {
+        updateFields[field] = value;
+        changes.push({
+          field,
+          old_value: currentBooking[field],
+          new_value: value,
+          changed_at: new Date(),
+          changed_by: req.user?.role === 'admin' ? 'admin' : 'client'
+        });
+      }
+    });
+    
+    // If no changes, return current booking
+    if (changes.length === 0) {
+      return res.json(currentBooking);
+    }
+    
+    // Add changes to change_history
+    updateFields.$push = { change_history: { $each: changes } };
+    
+    const updated = await Booking.findOneAndUpdate(
+      { id: Number(id) },
+      updateFields,
+      { new: true }
+    );
+    
     if (!updated) return res.status(404).json({ error: 'Booking not found' });
+    
+    // Log changes for debugging
+    console.log(`[updateBooking] Booking ${id} updated with ${changes.length} change(s):`, 
+      changes.map(c => `${c.field}: "${c.old_value}" -> "${c.new_value}"`).join(', '));
+    
     return res.json(updated);
   } catch (err) {
+    console.error('[updateBooking] error:', err.message);
     return res.status(400).json({ error: err.message });
   }
 }

@@ -56,7 +56,13 @@ async function getBookings(req, res) {
       .skip(offset)
       .limit(limit);
 
-    return res.json({ bookings, total });
+    // Include change_history in response
+    const bookingsWithHistory = bookings.map(booking => ({
+      ...booking.toObject(),
+      change_history: booking.change_history || []
+    }));
+
+    return res.json({ bookings: bookingsWithHistory, total });
   } catch (err) {
     console.error('[getBookings] error:', err);
     return res.status(500).json({ error: err.message || 'Server error' });
@@ -72,10 +78,41 @@ async function updateBooking(req, res) {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const updated = await Booking.findOneAndUpdate({ id: Number(id) }, { status }, { new: true });
+    // Get current booking to track changes
+    const currentBooking = await Booking.findOne({ id: Number(id) });
+    if (!currentBooking) return res.status(404).json({ error: 'Booking not found' });
+
+    // Check if status is actually changing
+    const changes = [];
+    if (currentBooking.status !== status) {
+      changes.push({
+        field: 'status',
+        old_value: currentBooking.status,
+        new_value: status,
+        changed_at: new Date(),
+        changed_by: 'admin'
+      });
+    }
+
+    const updateFields = { status };
+    if (changes.length > 0) {
+      updateFields.$push = { change_history: { $each: changes } };
+    }
+
+    const updated = await Booking.findOneAndUpdate(
+      { id: Number(id) },
+      updateFields,
+      { new: true }
+    );
+    
     if (!updated) return res.status(404).json({ error: 'Booking not found' });
 
     const booking = updated;
+    
+    // Log changes
+    if (changes.length > 0) {
+      console.log(`[updateBooking] Booking ${id} status changed: "${currentBooking.status}" -> "${status}"`);
+    }
 
     let tgId = booking.telegram_id;
     try {

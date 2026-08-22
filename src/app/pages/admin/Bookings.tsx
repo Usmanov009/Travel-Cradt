@@ -13,6 +13,22 @@ const statusColor: Record<string, string> = {
   rejected: 'bg-red-100 text-red-800',
 };
 
+const fieldLabel: Record<string, string> = {
+  status: 'Holat',
+  name: 'Ism',
+  phone: 'Telefon',
+  guests: 'Mehmonlar soni',
+  days: 'Kunlar soni',
+  travel_date: 'Sayohat sanasi',
+  price: 'Narx',
+};
+
+const changedByLabel: Record<string, string> = {
+  client: 'Mijoz',
+  admin: 'Admin',
+  system: 'Tizim',
+};
+
 export default function AdminBookings() {
   const { token, isSuperAdmin } = useContext(AdminAuthContext);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -23,6 +39,7 @@ export default function AdminBookings() {
   const [search, setSearch] = useState('');
   const [updating, setUpdating] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [viewingHistory, setViewingHistory] = useState<any>(null);
 
   const load = async (status?: string) => {
     if (!token) return;
@@ -177,32 +194,42 @@ export default function AdminBookings() {
                     {new Date(b.booked_at).toLocaleDateString('uz-UZ')}
                   </td>
                   <td className="px-4 py-3">
-                    {b.status === 'pending' ? (
-                      <div className="flex gap-1">
+                    <div className="flex flex-col gap-1">
+                      {b.status === 'pending' ? (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => updateStatus(b.id, 'accepted')}
+                            disabled={updating === b.id}
+                            className="px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 text-xs font-medium disabled:opacity-50"
+                          >
+                            ✓ Qabul
+                          </button>
+                          <button
+                            onClick={() => updateStatus(b.id, 'rejected')}
+                            disabled={updating === b.id}
+                            className="px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 text-xs font-medium disabled:opacity-50"
+                          >
+                            ✕ Rad
+                          </button>
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => updateStatus(b.id, 'accepted')}
+                          onClick={() => updateStatus(b.id, 'pending')}
                           disabled={updating === b.id}
-                          className="px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100 text-xs font-medium disabled:opacity-50"
+                          className="px-2 py-1 bg-gray-50 text-gray-500 rounded hover:bg-gray-100 text-xs disabled:opacity-50"
                         >
-                          ✓ Qabul
+                          Qaytarish
                         </button>
+                      )}
+                      {(b.change_history && b.change_history.length > 0) && (
                         <button
-                          onClick={() => updateStatus(b.id, 'rejected')}
-                          disabled={updating === b.id}
-                          className="px-2 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 text-xs font-medium disabled:opacity-50"
+                          onClick={() => setViewingHistory(b)}
+                          className="px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 text-xs font-medium"
                         >
-                          ✕ Rad
+                          O'zgarishlar ({b.change_history.length})
                         </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => updateStatus(b.id, 'pending')}
-                        disabled={updating === b.id}
-                        className="px-2 py-1 bg-gray-50 text-gray-500 rounded hover:bg-gray-100 text-xs disabled:opacity-50"
-                      >
-                        Qaytarish
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -213,6 +240,83 @@ export default function AdminBookings() {
           </table>
         )}
       </div>
+
+      {/* Change history modal */}
+      {viewingHistory && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setViewingHistory(null)}
+        >
+          <div
+            className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">O'zgarishlar tarixi</h3>
+                <p className="text-sm text-gray-500">{viewingHistory.title || 'N/A'} — {viewingHistory.name}</p>
+              </div>
+              <button
+                onClick={() => setViewingHistory(null)}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {viewingHistory.change_history && viewingHistory.change_history.length > 0 ? (
+              <div className="space-y-3">
+                {[...viewingHistory.change_history]
+                  .sort((a: any, b: any) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime())
+                  .map((ch: any, i: number) => (
+                    <div key={i} className="border rounded-lg p-3 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-sm text-gray-700">
+                          {fieldLabel[ch.field] || ch.field}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          ch.changed_by === 'client'
+                            ? 'bg-blue-100 text-blue-700'
+                            : ch.changed_by === 'admin'
+                            ? 'bg-purple-100 text-purple-700'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {changedByLabel[ch.changed_by] || ch.changed_by}
+                        </span>
+                      </div>
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400 text-xs w-16">Eski:</span>
+                          <span className="text-red-600 line-through">
+                            {ch.field === 'status' ? (statusLabel[String(ch.old_value)] || String(ch.old_value)) : String(ch.old_value ?? '—')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400 text-xs w-16">Yangi:</span>
+                          <span className="text-green-700 font-medium">
+                            {ch.field === 'status' ? (statusLabel[String(ch.new_value)] || String(ch.new_value)) : String(ch.new_value ?? '—')}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-2">
+                        {new Date(ch.changed_at).toLocaleString('uz-UZ')}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-gray-400 text-sm text-center py-4">Bu bron bo'yicha o'zgarishlar mavjud emas</p>
+            )}
+
+            <button
+              onClick={() => setViewingHistory(null)}
+              className="w-full mt-4 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50"
+            >
+              Yopish
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

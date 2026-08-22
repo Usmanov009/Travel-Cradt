@@ -98,6 +98,13 @@ const bookingSchema = new mongoose.Schema({
   company_id: { type: Number, index: true, ref: 'TourCompany' },
   package_id: { type: Number, index: true },
   created_at: { type: Date, default: Date.now },
+  change_history: [{
+    field: String,
+    old_value: mongoose.Schema.Types.Mixed,
+    new_value: mongoose.Schema.Types.Mixed,
+    changed_at: { type: Date, default: Date.now },
+    changed_by: String, // 'client', 'admin', 'system'
+  }],
 });
 
 const travelOfferSchema = new mongoose.Schema({
