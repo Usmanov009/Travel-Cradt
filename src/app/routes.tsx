@@ -23,6 +23,7 @@ import AdminUsers from "./pages/admin/Users";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminBookings from "./pages/admin/Bookings";
 import AdminRevenue from "./pages/admin/Revenue";
+import AdminReports from "./pages/admin/Reports";
 import AdminLogin from "./pages/admin/Login";
 import AdminAccounts from "./pages/admin/AdminAccounts";
 import AdminTravelOffers from "./pages/admin/TravelOffers";
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
       { path: "companies", Component: AdminCompanies },
       { path: "bookings", Component: AdminBookings },
       { path: "revenue", Component: AdminRevenue },
+      { path: "reports", Component: AdminReports },
       { path: "admin-accounts", Component: AdminAccounts },
       { path: "travel-offers", Component: AdminTravelOffers },
     ],

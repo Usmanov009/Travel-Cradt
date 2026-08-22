@@ -98,6 +98,7 @@ try {
   app.use('/api/admin/companies', require('./routes/admin/companies'));
   app.use('/api/admin/bookings', require('./routes/admin/bookings'));
   app.use('/api/admin/revenue', require('./routes/admin/revenue'));
+  app.use('/api/admin/reports', require('./routes/admin/reports'));
   app.use('/api/admin/admin-accounts', require('./routes/admin/adminAccounts'));
   app.use('/api/admin/travel-offers', require('./routes/admin/travelOffers'));
   console.log('Admin routes loaded.');

@@ -49,6 +49,12 @@ const tourCompanySchema = new mongoose.Schema({
   certificates: [String],
   achievements: [String],
   countries: [String],
+  revenue_reset_at: { type: Date, default: null },
+  revenue_history: [{
+    reset_at: Date,
+    total_revenue: Number,
+    total_bookings: Number,
+  }],
   created_at: { type: Date, default: Date.now },
 });
 

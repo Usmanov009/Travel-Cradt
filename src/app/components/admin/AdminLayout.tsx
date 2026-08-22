@@ -12,6 +12,7 @@ const superAdminNav: NavItem[] = [
   { to: '/admin/companies', label: 'Tur Firmalar', icon: '🏢' },
   { to: '/admin/travel-offers', label: 'Avia va Mehmonxona', icon: '✈️' },
   { to: '/admin/revenue', label: 'Daromad', icon: '💰' },
+  { to: '/admin/reports', label: 'Hisobot', icon: '📈' },
   { to: '/admin/admin-accounts', label: 'Admin Boshqaruvi', icon: '🔑' },
 ];
 
