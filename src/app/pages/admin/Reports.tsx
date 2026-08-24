@@ -1,6 +1,9 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { AdminAuthContext } from '../../contexts/AdminAuthContext';
 import { adminFetch } from '../../services/adminApi';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 type CompanyReport = {
   id: number;
@@ -43,6 +46,7 @@ const statusLabels: Record<string, string> = {
 export default function AdminReports() {
   const { token } = useContext(AdminAuthContext);
   const [data, setData] = useState<{ companies: CompanyReport[]; totals: Totals } | null>(null);
+  const [revData, setRevData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'revenue' | 'bookings' | 'name'>('revenue');
@@ -52,9 +56,14 @@ export default function AdminReports() {
   const loadReports = () => {
     if (!token) return;
     setLoading(true);
-    adminFetch('/reports', token)
-      .then((r) => r.json())
-      .then(setData)
+    Promise.all([
+      adminFetch('/reports', token).then((r) => r.json()),
+      adminFetch('/revenue', token).then((r) => r.json()),
+    ])
+      .then(([reportsJson, revenueJson]) => {
+        setData(reportsJson);
+        setRevData(revenueJson);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
@@ -80,11 +89,7 @@ export default function AdminReports() {
 
   const resetCompany = async (company: CompanyReport) => {
     const confirmed = window.confirm(
-      `"${company.name}" firmasining 3% komissiya summasi nollanadi.
-
-Nollanadigan summa: $${parseFloat(String(company.commission_3pct)).toLocaleString()}
-
-Davom etasizmi?`
+      `"${company.name}" firmasining 3% komissiya summasi nollanadi.\n\nNollanadigan summa: $${parseFloat(String(company.commission_3pct)).toLocaleString()}\n\nDavom etasizmi?`
     );
     if (!confirmed) return;
 
@@ -105,11 +110,7 @@ Davom etasizmi?`
 
   const resetAll = async () => {
     const confirmed = window.confirm(
-      `BARCHA tur firmalarning 3% komissiya summari nollanadi!
-
-Jami nollanadigan: $${parseFloat(String(totals?.total_commission || 0)).toLocaleString()}
-
-Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
+      `BARCHA tur firmalarning 3% komissiya summari nollanadi!\n\nJami nollanadigan: $${parseFloat(String(data?.totals?.total_commission || 0)).toLocaleString()}\n\nBu amalni qaytarib bo'lmaydi. Davom etasizmi?`
     );
     if (!confirmed) return;
 
@@ -137,15 +138,37 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
   if (!data) return null;
 
   const { totals } = data;
+  const summary = revData?.summary || totals;
+
+  // --- Revenue chart data ---
+  const typeLabels: Record<string, string> = {
+    domestic: 'Ichki',
+    international: 'Xalqaro',
+    custom: 'Maxsus',
+  };
+  const pieData = (revData?.byType || []).map((t: any) => ({
+    name: typeLabels[t.type] || t.type || 'Boshqa',
+    value: parseFloat(t.revenue),
+  }));
+  const monthLabels: Record<string, string> = {
+    '01': 'Yan', '02': 'Fev', '03': 'Mar', '04': 'Apr',
+    '05': 'May', '06': 'Iyn', '07': 'Iyl', '08': 'Avg',
+    '09': 'Sen', '10': 'Okt', '11': 'Noy', '12': 'Dek',
+  };
+  const chartData = (revData?.monthly || []).map((m: any) => ({
+    month: monthLabels[m.month?.split('-')[1]] || m.month,
+    daromad: parseFloat(m.revenue),
+    bronlar: parseInt(m.bookings),
+  }));
 
   return (
     <div>
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Hisobot</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Hisobot va Daromad</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Barcha tur firmalarning daromati va bronlar statistikasi
+            Moliyaviy tahlil va barcha tur firmalarning daromati hamda bronlar statistikasi
           </p>
         </div>
         <button
@@ -168,7 +191,7 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
         <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500">
           <div className="text-xs text-gray-500">Jami Daromad</div>
           <div className="text-2xl font-bold mt-1 text-green-600">
-            ${parseFloat(String(totals?.total_revenue || 0)).toLocaleString()}
+            ${parseFloat(String(summary?.total_revenue ?? totals?.total_revenue ?? 0)).toLocaleString()}
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-purple-500">
@@ -180,7 +203,7 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
         <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-yellow-500">
           <div className="text-xs text-gray-500">Kutilayotgan</div>
           <div className="text-2xl font-bold mt-1 text-yellow-600">
-            ${parseFloat(String(totals?.pending_revenue || 0)).toLocaleString()}
+            ${parseFloat(String(summary?.pending_revenue ?? totals?.pending_revenue ?? 0)).toLocaleString()}
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
@@ -200,6 +223,65 @@ Bu amalni qaytarib bo'lmaydi. Davom etasizmi?`
           <div className="text-2xl font-bold mt-1 text-red-600">{totals?.rejected_bookings || 0}</div>
         </div>
       </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Monthly chart */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Oylik Daromad (so'nggi 12 oy)</h2>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(v: any) => [`$${v}`, 'Daromad']} />
+                <Bar dataKey="daromad" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400">Ma'lumot yo'q</div>
+          )}
+        </div>
+
+        {/* Pie chart */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Tur Turlari</h2>
+          {pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  {pieData.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip formatter={(v: any) => [`$${v}`, 'Daromad']} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400">Ma'lumot yo'q</div>
+          )}
+        </div>
+      </div>
+
+      {/* Top packages */}
+      {(revData?.topPackages?.length || 0) > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Top Turlar (daromad bo'yicha)</h2>
+          <div className="space-y-3">
+            {revData.topPackages.map((pkg: any, i: number) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">{i + 1}</div>
+                  <div>
+                    <div className="font-medium text-gray-800 text-sm">{pkg.title}</div>
+                    <div className="text-gray-400 text-xs">{pkg.bookings} ta bron</div>
+                  </div>
+                </div>
+                <div className="font-bold text-green-600">${parseFloat(pkg.revenue).toLocaleString()}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-wrap items-center gap-3">

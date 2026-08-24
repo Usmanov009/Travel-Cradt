@@ -22,7 +22,6 @@ import AdminPackages from "./pages/admin/Packages";
 import AdminUsers from "./pages/admin/Users";
 import AdminCompanies from "./pages/admin/Companies";
 import AdminBookings from "./pages/admin/Bookings";
-import AdminRevenue from "./pages/admin/Revenue";
 import AdminReports from "./pages/admin/Reports";
 import AdminLogin from "./pages/admin/Login";
 import AdminAccounts from "./pages/admin/AdminAccounts";
@@ -59,7 +58,7 @@ export const router = createBrowserRouter([
       { path: "users", Component: AdminUsers },
       { path: "companies", Component: AdminCompanies },
       { path: "bookings", Component: AdminBookings },
-      { path: "revenue", Component: AdminRevenue },
+      { path: "revenue", Component: AdminReports },
       { path: "reports", Component: AdminReports },
       { path: "admin-accounts", Component: AdminAccounts },
       { path: "travel-offers", Component: AdminTravelOffers },
