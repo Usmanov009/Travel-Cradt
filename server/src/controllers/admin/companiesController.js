@@ -134,7 +134,7 @@ async function createCompany(req, res) {
       companyData.email = normalizedEmail;
 
       if (password && password.length >= 6) {
-        const hash = bcrypt.hash(password, 10);
+        const hash = await bcrypt.hash(password, 10);
         companyData.password_hash = hash;
 
         const company = new TourCompany(companyData);
@@ -216,7 +216,7 @@ async function importCompanies(req, res) {
           companyData.email = normalizedEmail;
 
           if (row.password && row.password.length >= 6) {
-            const hash = bcrypt.hash(row.password, 10);
+            const hash = await bcrypt.hash(row.password, 10);
             companyData.password_hash = hash;
 
             const company = new TourCompany(companyData);

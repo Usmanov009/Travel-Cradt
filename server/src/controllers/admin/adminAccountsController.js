@@ -148,7 +148,7 @@ async function importAdmins(req, res) {
           continue;
         }
 
-        const hash = bcrypt.hash(row.password, 10);
+        const hash = await bcrypt.hash(row.password, 10);
 
         const company = new TourCompany({
           name: row.company_name.trim(),
@@ -231,7 +231,7 @@ async function createAdmin(req, res) {
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(400).json({ error: 'Bu email allaqachon mavjud' });
 
-    const hash = bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(password, 10);
 
     const company = new TourCompany({
       name: company_name,
