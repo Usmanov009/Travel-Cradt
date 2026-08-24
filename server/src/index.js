@@ -133,20 +133,29 @@ app.listen(PORT, '0.0.0.0', async () => {
 
   setInterval(() => keepAlive(selfUrl), 4 * 60 * 1000);
 
+  let dbReady = false;
   try {
     await connectDB();
+    dbReady = mongoose.connection.readyState === 1;
     console.log('MongoDB connected and ready');
   } catch (err) {
     console.error('DB setup error:', err.message);
   }
 
-  try {
-    await connectMongo();
-  } catch (err) {
-    console.error('MongoDB setup error:', err.message);
+  if (!dbReady) {
+    try {
+      await connectMongo();
+      dbReady = mongoose.connection.readyState === 1;
+    } catch (err) {
+      console.error('MongoDB setup error:', err.message);
+    }
   }
 
-  try {
+  if (!dbReady) {
+    console.error('⚠️ MongoDB ulanmadi — admin seed va bot o\'tkazib yuborildi. MONGODB_URI ni tekshiring.');
+  }
+
+  if (dbReady) try {
     const bcrypt = require('bcryptjs');
     const { User } = require('./models');
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
