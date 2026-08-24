@@ -6,3 +6,7 @@ dist/
 # Secrets (never commit)
 .env
 server/.env
+
+# Temp logs
+server-log.txt
+server-err.txt
