@@ -214,8 +214,8 @@ async function listAdmins(req, res) {
     );
     return res.json({ admins: result });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('listAdmins error:', err);
+    return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 }
 
@@ -266,8 +266,8 @@ async function createAdmin(req, res) {
       },
     });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('createAdmin error:', err);
+    return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 }
 
@@ -285,8 +285,8 @@ async function deleteAdmin(req, res) {
     }
     return res.json({ deleted: true });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('deleteAdmin error:', err);
+    return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 }
 
@@ -307,8 +307,8 @@ async function resetPassword(req, res) {
     }
     return res.json({ updated: true });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Server error' });
+    console.error('resetPassword error:', err);
+    return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 }
 

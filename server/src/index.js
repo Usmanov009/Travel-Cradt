@@ -43,6 +43,14 @@ app.get('/api/tg-user/:telegram_id', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+// DB readiness guard: baza ulanmaguncha so'rovlarni aniq 503 bilan javoblash
+app.use('/api', (req, res, next) => {
+  if (mongoose.connection.readyState !== 1 && req.path !== '/health') {
+    return res.status(503).json({ error: "Ma'lumotlar bazasi hali ulanmagan. Iltimos, bir necha soniyadan keyin qayta urinib ko'ring." });
+  }
+  next();
+});
+
 app.use('/api/auth', require('./routes/auth'));
 app.get('/api/enrich', enrichCountry);
 app.get('/api/places/geocode', geocodePlace);
