@@ -206,9 +206,26 @@ export default function AdminPackages() {
     setForm({ ...form, comboStops: updated });
   };
 
+  // Yozilgan davlat nomini ro'yxatdagi kanonik qiymatga normallashtirish
+  // (masalan "misr" -> "Egypt"). Ro'yxatda bo'lmasa, yozilgan matn qoladi.
+  const normalizeCountry = (raw: string) => {
+    const text = raw.trim();
+    if (!text) return '';
+    const lower = text.toLowerCase();
+    const match = countryOptions.find((opt) => {
+      const cleanLabel = opt.label.replace(/[^\p{L}\p{N}\s'()]/gu, '').trim().toLowerCase();
+      return (
+        opt.value.toLowerCase() === lower ||
+        opt.label.toLowerCase() === lower ||
+        cleanLabel === lower
+      );
+    });
+    return match ? match.value : text;
+  };
+
   const save = async () => {
     if (form.type === 'international' && !form.country) {
-      alert('Xalqaro tur uchun avval mamlakatni tanlang.');
+      alert('Xalqaro tur uchun avval mamlakatni yozing.');
       return;
     }
     if (form.type === 'domestic' && form.valid_dates.length === 0) {
@@ -476,6 +493,12 @@ export default function AdminPackages() {
       {showCreate && (
         <div className="bg-white rounded-xl shadow p-6 mb-6 border border-blue-100">
           <h2 className="text-lg font-semibold mb-4 text-gray-700">{editPkg ? 'Turni Tahrirlash' : 'Yangi Tur Qo\'shish'}</h2>
+          {/* Davlatlar uchun takliflar ro'yxati — input'larga erkin yozish mumkin */}
+          <datalist id="country-list">
+            {countryOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </datalist>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tur Turi *</label>
@@ -598,16 +621,15 @@ export default function AdminPackages() {
               <div className="sm:col-span-2 grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat *</label>
-                  <select
+                  <input
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    list="country-list"
                     value={form.country}
                     onChange={e => setForm({ ...form, country: e.target.value })}
-                  >
-                    <option value="">Mamlakat tanlang...</option>
-                    {countryOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+                    onBlur={e => setForm(f => ({ ...f, country: normalizeCountry(f.country) }))}
+                    placeholder="Mamlakatni yozing (masalan: Misr)"
+                    autoComplete="off"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Manzil</label>
@@ -616,10 +638,10 @@ export default function AdminPackages() {
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     value={form.destination}
                     onChange={e => setForm({ ...form, destination: e.target.value })}
-                    placeholder={form.country ? "Parij" : "Avval mamlakat tanlang"}
+                    placeholder={form.country ? "Parij" : "Avval mamlakatni yozing"}
                   />
                   {!form.country && (
-                    <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni tanlang.</p>
+                    <p className="text-xs text-amber-600 mt-1">Manzilni kiritish uchun avval mamlakatni yozing.</p>
                   )}
                 </div>
               </div>
@@ -631,16 +653,15 @@ export default function AdminPackages() {
                   <div key={index} className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Mamlakat {index + 1} *</label>
-                      <select
+                      <input
                         className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        list="country-list"
                         value={stop.country}
                         onChange={e => updateComboStop(index, 'country', e.target.value)}
-                      >
-                        <option value="">Mamlakat tanlang...</option>
-                        {countryOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
+                        onBlur={() => updateComboStop(index, 'country', normalizeCountry(stop.country))}
+                        placeholder="Mamlakatni yozing"
+                        autoComplete="off"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Manzil {index + 1} *</label>
